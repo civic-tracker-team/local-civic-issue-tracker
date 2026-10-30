@@ -1,0 +1,6 @@
+# Repository working rules
+
+- Keep private working notes, course reference materials, presentations not selected for the shared engineering set, imported records, datasets, experiment outputs, and archived prototypes in the ignored `.local` directory. Maintained project engineering documents belong in tracked `docs/engineering/`.
+- Deliberately selected project code, code-related documentation, configuration, and maintained engineering documents (including SRS, SPMP, and ADRs) belong outside `.local` for version control. Keep the engineering set in `docs/engineering/`; do not copy private research, raw inputs, or course handouts there automatically. Archived prototypes are not an approved production baseline.
+- When local history is relevant and available, read `.local/START_HERE.md` and `.local/CONTINUATION.md`. Local working context does not replace the current SRS or confirmed team decisions. Ask before introducing unagreed requirements, assumptions, dependencies, numerical targets, or workflows.
+- Do not put machine-specific local file locations in authored documents. Configure code locations through arguments, configuration, or environment settings; avoid hardcoded absolute paths.

@@ -1,0 +1,24 @@
+/.local/
+
+# Build output and dependencies
+**/target/
+**/node_modules/
+**/dist/
+**/__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Personal IDE and operating-system files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Local credentials and environment overrides
+.env
+.env.*
+!.env.example
+~$*
