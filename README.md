@@ -19,7 +19,7 @@ The project focuses on selected Council records from 2023 onward, including agen
 
 The maintained SRS, SPMP and architecture decision records belong in [docs/engineering](docs/engineering/README.md).
 
-SRS v1.0 is available as an [editable DOCX](docs/engineering/srs/LocalCivicIssueTracker_SRS_v1.0.docx) and [PDF](docs/engineering/srs/LocalCivicIssueTracker_SRS_v1.0.pdf).
+The [Software Requirements Specification](docs/engineering/srs/) describes the project's scope, requirements and verification approach.
 
 ## Development
 
