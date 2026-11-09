@@ -30,5 +30,5 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
-  <!-- Services select their own dependencies and executable packaging later. -->
+  <!-- Each service declares its runtime dependencies and executable packaging. -->
 </project>

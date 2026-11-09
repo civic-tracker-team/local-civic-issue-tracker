@@ -3,6 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-10-30
 - **Recorded:** 2026-11-01, retrospectively
+- **Refined:** 2026-11-08, publication mechanism and historical corrections
 - **Deciders:** Kazim Yigit Ablay
 - **Related requirements:** FR-33, NFR-10, NFR-11, NFR-13
 
@@ -18,7 +19,15 @@ We will make a bounded run's new results available to users after the run comple
 
 The last successfully published results will remain available during later processing and unresolved failure/recovery. Browsing and search will use published results without waiting for the entire new run to finish. A run is the selected bounded group of whole meetings, not the full historical archive.
 
-This decision specifies visibility behavior. It does not choose a staging schema, publication pointer, search synchronization mechanism or one long transaction across services. Browser refresh and first-publication presentation remain separate details.
+The original decision specified visibility behavior without choosing a publication mechanism. The November 8 refinement below records the subsequently accepted design. No long transaction across all services is selected.
+
+## November 8 refinement
+
+The coordinator owns a publication manifest containing exact source-version and analysis-revision references. Owners save those immutable or revisioned outputs before completion is acknowledged. After the complete manifest is checked, one coordinator transaction advances the durable current-publication pointer. Public callers retain a publication ID across related reads, and owners enforce membership in that published view. Internal processing access remains separate and authenticated. Before the first publication, the application identifies the absence of a published collection; later refreshes can discover a new publication.
+
+Normal new-input processing retains publication after each successful bounded run. Historical corrections require a coherent replacement of the affected published history. The previous publication remains available until that replay succeeds, even when replay spans several bounded runs, so a corrected prefix is not combined with unrecomputed later history.
+
+This refinement was accepted by Kazim Yigit Ablay as part of the consolidated T03 design on November 8. It adds revision retention, manifest checks and potentially longer publication delays for corrections. T03_DESIGN.md records the implementation direction. The submitted SRS remains unchanged and its next revision needs this explicit correction-specific qualification. No runtime consistency or recovery result is asserted.
 
 ## Alternatives considered
 

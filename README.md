@@ -23,4 +23,4 @@ The [Software Requirements Specification](docs/engineering/srs/) describes the p
 
 ## Development
 
-The repository contains the initial service and frontend folder structure and template Maven configuration. See [development setup](docs/development/README.md) for the layout, selected tooling and current scaffold boundaries.
+The Java services have a minimal runnable Spring Boot baseline. See [development setup](docs/development/README.md) for the build, service launch commands and implementation boundaries.
