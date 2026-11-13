@@ -8,6 +8,9 @@ import java.util.UUID;
 @Entity
 @Table(name = "source_observation", schema = "records")
 public class SourceObservation extends AssignedEntity {
+  public String publicationDate;
+  public String resolvedUrl;
+
   public UUID documentId;
   public UUID versionId;
   public String sourceUrl;

@@ -127,7 +127,8 @@ class RecordsFoundationTests {
     f.id = "second";
     var b = retain(f, "b");
     assertNotEquals(a.documentId(), b.documentId());
-    f.next(); retain(f, "a");
+    f.next();
+    retain(f, "a");
     f.id = "third";
     f.next();
     var c = retain(f, "a");
@@ -197,20 +198,34 @@ class RecordsFoundationTests {
     f.cancellation = "Official cancellation notice";
     f.next();
     assertEquals(first.versionId(), retain(f, "unchanged").versionId());
-    assertEquals(2, jdbc.queryForObject(
-        "select count(*) from records.document_context where document_id=?", Integer.class,
-        first.documentId()));
-    assertEquals("Official cancellation notice", jdbc.queryForObject(
-        "select cancellation_evidence from records.source_meeting where portal=?",
-        String.class, f.portal));
+    assertEquals(
+        2,
+        jdbc.queryForObject(
+            "select count(*) from records.document_context where document_id=?",
+            Integer.class,
+            first.documentId()));
+    assertEquals(
+        "Official cancellation notice",
+        jdbc.queryForObject(
+            "select cancellation_evidence from records.source_meeting where portal=?",
+            String.class,
+            f.portal));
     f.title = "Historical title";
     f.current = false;
-    f.next(); retain(f, "unchanged");
-    assertEquals("Updated title", jdbc.queryForObject(
-        "select title from records.source_meeting where portal=?", String.class, f.portal));
-    assertEquals(1, jdbc.queryForObject(
-        "select count(*) from records.source_observation where document_id=? and meeting_title=?",
-        Integer.class, first.documentId(), "Historical title"));
+    f.next();
+    retain(f, "unchanged");
+    assertEquals(
+        "Updated title",
+        jdbc.queryForObject(
+            "select title from records.source_meeting where portal=?", String.class, f.portal));
+    assertEquals(
+        1,
+        jdbc.queryForObject(
+            "select count(*) from records.source_observation where document_id=? and"
+                + " meeting_title=?",
+            Integer.class,
+            first.documentId(),
+            "Historical title"));
   }
 
   @Test
@@ -222,16 +237,89 @@ class RecordsFoundationTests {
     second.meeting = "second-meeting";
     var b = retain(second, "separate original");
     assertNotEquals(a.documentId(), b.documentId());
-    jdbc.update("insert into records.document_context "
-        + "select ?, ?, meeting_id,item_id,template_id,output_type,language "
-        + "from records.document_context where document_id=?",
-        UUID.randomUUID(), a.documentId(), b.documentId());
+    jdbc.update(
+        "insert into records.document_context "
+            + "select ?, ?, meeting_id,item_id,template_id,output_type,language "
+            + "from records.document_context where document_id=?",
+        UUID.randomUUID(),
+        a.documentId(),
+        b.documentId());
     second.id = "new-alias-in-shared-context";
     second.next();
     assertEquals(a.documentId(), retain(second, "shared original").documentId());
-    assertEquals(2, jdbc.queryForObject(
-        "select count(distinct meeting_id) from records.document_context where document_id=?",
-        Integer.class, a.documentId()));
+    assertEquals(
+        2,
+        jdbc.queryForObject(
+            "select count(distinct meeting_id) from records.document_context where document_id=?",
+            Integer.class,
+            a.documentId()));
+  }
+
+  @Test
+  void meetingLevelObservationKeepsItsOwnMeetingWhenContextsAreShared() throws Exception {
+    Fixture first = new Fixture();
+    first.item = null;
+    var shared = retain(first, "shared packet");
+    Fixture second = sharedContext(first, shared.documentId(), true);
+    second.id = "second-meeting-packet";
+    second.url = "https://example.invalid/second-meeting-packet";
+    second.next();
+    assertEquals(shared.documentId(), retain(second, "shared packet").documentId());
+    UUID observedMeeting =
+        jdbc.queryForObject(
+            "select c.meeting_id from records.source_observation o "
+                + "join records.document_context c on c.id=o.context_id where o.source_url=?",
+            UUID.class,
+            second.url);
+    UUID expectedMeeting =
+        jdbc.queryForObject(
+            "select id from records.source_meeting where portal=? and official_id=?",
+            UUID.class,
+            second.portal,
+            second.meeting);
+    assertEquals(expectedMeeting, observedMeeting);
+  }
+
+  @Test
+  void repeatedAliasValueInAnotherMeetingRetainsIdentityAfterByteChange() throws Exception {
+    Fixture first = new Fixture();
+    var shared = retain(first, "original");
+    Fixture second = sharedContext(first, shared.documentId(), false);
+    second.id = first.id;
+    second.next();
+    assertEquals(shared.documentId(), retain(second, "original").documentId());
+    assertEquals(
+        2,
+        jdbc.queryForObject(
+            "select count(distinct meeting_id) from records.source_alias "
+                + "where document_id=? and family=? and value=?",
+            Integer.class,
+            shared.documentId(),
+            "document-list",
+            first.id));
+    second.next();
+    var changed = retain(second, "revised");
+    assertEquals(shared.documentId(), changed.documentId());
+    assertEquals(2, changed.versionCount());
+    assertNotEquals(shared.versionId(), changed.versionId());
+  }
+
+  private Fixture sharedContext(Fixture first, UUID documentId, boolean meetingLevel)
+      throws IOException {
+    Fixture second = new Fixture();
+    second.portal = first.portal;
+    second.meeting = "second-meeting";
+    second.id = "separate-document";
+    second.item = meetingLevel ? null : first.item;
+    var separate = retain(second, "separate bytes");
+    jdbc.update(
+        "insert into records.document_context "
+            + "select ?, ?, meeting_id,item_id,template_id,output_type,language "
+            + "from records.document_context where document_id=?",
+        UUID.randomUUID(),
+        documentId,
+        separate.documentId());
+    return second;
   }
 
   @Test
@@ -281,22 +369,23 @@ class RecordsFoundationTests {
   @Test
   void assignedIdsRemainStableAcrossSaveLoadAndUpdate() {
     var tx = new TransactionTemplate(manager);
-    UUID id = tx.execute(status -> {
-      Meeting meeting = new Meeting();
-      meeting.portal = UUID.randomUUID().toString();
-      meeting.officialId = "id";
-      UUID original = meeting.id;
-      assertTrue(meeting.isNew());
-      assertEquals(4, original.version());
-      meetings.saveAndFlush(meeting);
-      assertFalse(meeting.isNew());
-      entities.clear();
-      Meeting loaded = meetings.findById(original).orElseThrow();
-      assertFalse(loaded.isNew());
-      loaded.title = "updated";
-      meetings.saveAndFlush(loaded);
-      return loaded.id;
-    });
+    UUID id =
+        tx.execute(status -> {
+          Meeting meeting = new Meeting();
+          meeting.portal = UUID.randomUUID().toString();
+          meeting.officialId = "id";
+          UUID original = meeting.id;
+          assertTrue(meeting.isNew());
+          assertEquals(4, original.version());
+          meetings.saveAndFlush(meeting);
+          assertFalse(meeting.isNew());
+          entities.clear();
+          Meeting loaded = meetings.findById(original).orElseThrow();
+          assertFalse(loaded.isNew());
+          loaded.title = "updated";
+          meetings.saveAndFlush(loaded);
+          return loaded.id;
+        });
     assertEquals("updated", meetings.findById(id).orElseThrow().title);
   }
 
@@ -304,17 +393,19 @@ class RecordsFoundationTests {
   void optimisticVersionRejectsStaleMutablePointerUpdate() throws Exception {
     var retained = retain(new Fixture(), "version");
     var tx = new TransactionTemplate(manager);
-    Document stale = tx.execute(status -> {
-      Document doc = entities.find(Document.class, retained.documentId());
-      entities.detach(doc);
-      return doc;
-    });
+    Document stale =
+        tx.execute(status -> {
+          Document doc = entities.find(Document.class, retained.documentId());
+          entities.detach(doc);
+          return doc;
+        });
     tx.executeWithoutResult(status -> {
       var doc = entities.find(Document.class, retained.documentId());
       doc.currentObservedAt = Instant.parse("2026-11-10T00:00:00Z");
     });
     stale.currentObservedAt = Instant.parse("2026-11-11T00:00:00Z");
-    assertThrows(OptimisticLockException.class,
+    assertThrows(
+        OptimisticLockException.class,
         () -> tx.executeWithoutResult(status -> entities.merge(stale)));
   }
 
@@ -322,31 +413,40 @@ class RecordsFoundationTests {
   void rollbackAfterInstallationLeavesOrphanButNoCommittedMetadata() throws Exception {
     Fixture f = new Fixture();
     var tx = new TransactionTemplate(manager);
-    var retained = tx.execute(status -> {
-      try {
-        var result = retain(f, "orphan");
-        status.setRollbackOnly();
-        return result;
-      } catch (IOException error) { throw new java.io.UncheckedIOException(error); }
-    });
+    var retained =
+        tx.execute(status -> {
+          try {
+            var result = retain(f, "orphan");
+            status.setRollbackOnly();
+            return result;
+          } catch (IOException error) {
+            throw new java.io.UncheckedIOException(error);
+          }
+        });
     assertThrows(IllegalArgumentException.class, () -> records.inspect(retained.documentId()));
     Path root = Path.of(environment.getRequiredProperty("records.storage-root"));
     assertTrue(Files.isRegularFile(root.resolve(retained.storageKey())));
-    assertEquals(0, jdbc.queryForObject(
-        "select count(*) from records.source_meeting where portal=?",
-        Integer.class, f.portal));
+    assertEquals(
+        0,
+        jdbc.queryForObject(
+            "select count(*) from records.source_meeting where portal=?", Integer.class, f.portal));
   }
 
   @Test
   void runtimeRoleCannotRunDdlOrAccessOtherOwnerSchemas() {
-    assertThrows(DataAccessException.class,
+    assertThrows(
+        DataAccessException.class,
         () -> jdbc.execute("create table records.forbidden_runtime_ddl (id integer)"));
-    assertThrows(DataAccessException.class,
+    assertThrows(
+        DataAccessException.class,
         () -> jdbc.execute("update records.flyway_schema_history set success=false"));
     for (String schema : java.util.List.of("analysis", "coordinator")) {
-      assertEquals(false, jdbc.queryForObject(
-          "select has_schema_privilege(current_user, ?, 'USAGE')", Boolean.class, schema));
-      assertThrows(DataAccessException.class,
+      assertEquals(
+          false,
+          jdbc.queryForObject(
+              "select has_schema_privilege(current_user, ?, 'USAGE')", Boolean.class, schema));
+      assertThrows(
+          DataAccessException.class,
           () -> jdbc.execute("create table " + schema + ".forbidden_records_table (id integer)"));
     }
   }
@@ -355,13 +455,21 @@ class RecordsFoundationTests {
   void databaseConstraintsRejectDuplicateAliasesAndCrossDocumentVersionPointers() throws Exception {
     var a = retain(new Fixture(), "a");
     var b = retain(new Fixture(), "b");
-    assertThrows(DataAccessException.class, () -> jdbc.update(
-        "update records.source_document set current_version_id=? where id=?",
-        b.versionId(), a.documentId()));
-    assertThrows(DataAccessException.class, () -> jdbc.update(
-        "insert into records.source_alias select ?,document_id,meeting_id,family,value, false "
-            + "from records.source_alias where document_id=?",
-        UUID.randomUUID(), a.documentId()));
+    assertThrows(
+        DataAccessException.class,
+        () ->
+            jdbc.update(
+                "update records.source_document set current_version_id=? where id=?",
+                b.versionId(),
+                a.documentId()));
+    assertThrows(
+        DataAccessException.class,
+        () ->
+            jdbc.update(
+                "insert into records.source_alias select ?,document_id,meeting_id,family,value,"
+                    + " false from records.source_alias where document_id=?",
+                UUID.randomUUID(),
+                a.documentId()));
   }
 
   @Test
@@ -372,12 +480,18 @@ class RecordsFoundationTests {
             environment.getRequiredProperty("spring.flyway.user"),
             environment.getRequiredProperty("spring.flyway.password"));
     JdbcTemplate migrations = new JdbcTemplate(source);
-    assertEquals(5, migrations.queryForObject(
-        "select count(*) from records.flyway_schema_history where success and version is not null",
-        Integer.class));
-    assertEquals(5, migrations.queryForObject(
-        "select count(distinct version) from records.flyway_schema_history where success "
-            + "and version is not null", Integer.class));
+    assertEquals(
+        6,
+        migrations.queryForObject(
+            "select count(*) from records.flyway_schema_history where success and version is not"
+                + " null",
+            Integer.class));
+    assertEquals(
+        6,
+        migrations.queryForObject(
+            "select count(distinct version) from records.flyway_schema_history where success "
+                + "and version is not null",
+            Integer.class));
   }
 
   @Test
@@ -399,15 +513,21 @@ class RecordsFoundationTests {
   @Test
   void invalidOrInterruptedInputDoesNotCreateMetadata() {
     Fixture f = new Fixture();
-    assertThrows(IOException.class, () -> records.retain(f.input(), new java.io.InputStream() {
-      @Override
-      public int read() throws IOException {
-        throw new IOException("Interrupted");
-      }
-    }));
-    assertEquals(0, jdbc.queryForObject(
-        "select count(*) from records.source_meeting where portal=?",
-        Integer.class, f.portal));
+    assertThrows(
+        IOException.class,
+        () ->
+            records.retain(
+                f.input(),
+                new java.io.InputStream() {
+                  @Override
+                  public int read() throws IOException {
+                    throw new IOException("Interrupted");
+                  }
+                }));
+    assertEquals(
+        0,
+        jdbc.queryForObject(
+            "select count(*) from records.source_meeting where portal=?", Integer.class, f.portal));
     f.url = "../not-absolute";
     assertThrows(IllegalArgumentException.class, f::input);
   }
@@ -415,33 +535,37 @@ class RecordsFoundationTests {
   @Test
   void fileInstallationFailureRollsBackMetadataAndCleansStaging(@TempDir Path root)
       throws Exception {
-    var store = new org.civictracker.records.storage.OriginalFileStore(root) {
-      @Override
-      public String install(Staged staged, UUID artifactId) throws IOException {
-        throw new IOException("Synthetic installation failure");
-      }
-    };
+    var store =
+        new org.civictracker.records.storage.OriginalFileStore(root) {
+          @Override
+          public String install(Staged staged, UUID artifactId) throws IOException {
+            throw new IOException("Synthetic installation failure");
+          }
+        };
     var failing = new RecordsFoundation(entities, jdbc, manager, store);
     Fixture f = new Fixture();
-    assertThrows(IOException.class,
+    assertThrows(
+        IOException.class,
         () -> failing.retain(f.input(), new ByteArrayInputStream(new byte[] {1})));
-    assertEquals(0, jdbc.queryForObject(
-        "select count(*) from records.source_meeting where portal=?",
-        Integer.class, f.portal));
+    assertEquals(
+        0,
+        jdbc.queryForObject(
+            "select count(*) from records.source_meeting where portal=?", Integer.class, f.portal));
     try (var paths = Files.list(root.resolve("staging"))) {
       assertEquals(0, paths.count());
     }
   }
 
   private RecordsFoundation.Retained retain(Fixture fixture, String bytes) throws IOException {
-    return records.retain(fixture.input(),
-        new ByteArrayInputStream(bytes.getBytes(StandardCharsets.UTF_8)));
+    return records.retain(
+        fixture.input(), new ByteArrayInputStream(bytes.getBytes(StandardCharsets.UTF_8)));
   }
 
   private int observationCount(UUID document) {
     return jdbc.queryForObject(
         "select count(*) from records.source_observation where document_id=?",
-        Integer.class, document);
+        Integer.class,
+        document);
   }
 
   private static class Fixture {
@@ -457,13 +581,29 @@ class RecordsFoundationTests {
     String url = "https://example.invalid/records?token=1";
     Instant at = Instant.parse("2026-11-08T12:00:00Z");
     boolean current = true;
+
     void next() {
       at = at.plusSeconds(1);
     }
+
     SourceInput input() {
-      return new SourceInput(portal, meeting, title, "2026-11-01", item, item, template,
-          output, language, "document-list", id, URI.create(url), "../../original.pdf",
-          at, current, cancellation);
+      return new SourceInput(
+          portal,
+          meeting,
+          title,
+          "2026-11-01",
+          item,
+          item,
+          template,
+          output,
+          language,
+          "document-list",
+          id,
+          URI.create(url),
+          "../../original.pdf",
+          at,
+          current,
+          cancellation);
     }
   }
 }

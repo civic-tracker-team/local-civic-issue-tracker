@@ -25,7 +25,7 @@ class RecordsServiceApplicationTests {
 
   @Test
   @Timeout(30)
-  void startsAnIndependentHttpServerWithoutProductRoutes() throws Exception {
+  void startsAnIndependentHttpServerWithNoAnonymousAccess() throws Exception {
     assertTrue(port > 0);
     assertEquals("records-service", environment.getProperty("spring.application.name"));
     HttpRequest request =
@@ -36,7 +36,7 @@ class RecordsServiceApplicationTests {
     try (HttpClient client =
         HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()) {
       HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
-      assertEquals(404, response.statusCode());
+      assertEquals(401, response.statusCode());
     }
   }
 }

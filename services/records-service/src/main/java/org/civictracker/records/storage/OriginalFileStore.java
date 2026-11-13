@@ -28,6 +28,7 @@ public class OriginalFileStore {
     root = configuredRoot.toRealPath();
     Files.createDirectories(root.resolve("staging"));
     Files.createDirectories(root.resolve("originals"));
+    Files.createDirectories(root.resolve("captures"));
     safe("staging");
     safe("originals");
   }
@@ -44,8 +45,8 @@ public class OriginalFileStore {
     try {
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
       long length = 0;
-      try (FileChannel channel = FileChannel.open(file, StandardOpenOption.WRITE,
-          LinkOption.NOFOLLOW_LINKS);
+      try (FileChannel channel =
+              FileChannel.open(file, StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS);
           OutputStream output = Channels.newOutputStream(channel)) {
         byte[] buffer = new byte[8192];
         int count;
@@ -67,11 +68,18 @@ public class OriginalFileStore {
   }
 
   public String install(Staged staged, UUID artifactId) throws IOException {
+    return installAt(staged, "originals/" + artifactId);
+  }
+
+  public String installCapture(Staged staged, UUID captureId) throws IOException {
+    return installAt(staged, "captures/" + captureId);
+  }
+
+  private String installAt(Staged staged, String key) throws IOException {
     if (!staged.path().normalize().getParent().equals(safe("staging"))
         || !Files.isRegularFile(staged.path(), LinkOption.NOFOLLOW_LINKS)) {
       throw new IOException("Original was not staged in the configured store");
     }
-    String key = "originals/" + artifactId;
     Path destination = safe(key);
     if (Files.exists(destination, LinkOption.NOFOLLOW_LINKS)) {
       throw new FileAlreadyExistsException(key);
@@ -82,6 +90,21 @@ public class OriginalFileStore {
 
   public InputStream open(String key) throws IOException {
     return Files.newInputStream(safe(key), LinkOption.NOFOLLOW_LINKS);
+  }
+
+  /** Checks the retained length before an HTTP response begins. */
+  public InputStream openVerifiedLength(String key, long length) throws IOException {
+    FileChannel channel =
+        FileChannel.open(safe(key), StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS);
+    try {
+      if (channel.size() != length) {
+        throw new IOException("Retained artifact length differs from its metadata");
+      }
+      return Channels.newInputStream(channel);
+    } catch (IOException | RuntimeException error) {
+      channel.close();
+      throw error;
+    }
   }
 
   private Path safe(String key) throws IOException {

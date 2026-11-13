@@ -142,6 +142,20 @@ class OriginalFileStoreTests {
     assertEquals("outside storage", Files.readString(outside.resolve("secret")));
   }
 
+  @Test
+  void verifiedLengthFailureClosesTheFileAndSuccessfulReadsOwnTheirStream() throws Exception {
+    OriginalFileStore store = new OriginalFileStore(root);
+    String key;
+    try (var staged = store.stage(new ByteArrayInputStream(new byte[] {1, 2, 3}))) {
+      key = store.install(staged, UUID.randomUUID());
+    }
+    assertThrows(IOException.class, () -> store.openVerifiedLength(key, 2));
+    try (var stream = store.openVerifiedLength(key, 3)) {
+      assertArrayEquals(new byte[] {1, 2, 3}, stream.readAllBytes());
+    }
+    Files.delete(root.resolve(key));
+  }
+
   private long stagingCount() throws IOException {
     try (var paths = Files.list(root.resolve("staging"))) {
       return paths.count();
