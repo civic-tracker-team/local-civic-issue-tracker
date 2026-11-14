@@ -29,6 +29,7 @@ public class OriginalFileStore {
     Files.createDirectories(root.resolve("staging"));
     Files.createDirectories(root.resolve("originals"));
     Files.createDirectories(root.resolve("captures"));
+    Files.createDirectories(root.resolve("prepared"));
     safe("staging");
     safe("originals");
   }
@@ -73,6 +74,10 @@ public class OriginalFileStore {
 
   public String installCapture(Staged staged, UUID captureId) throws IOException {
     return installAt(staged, "captures/" + captureId);
+  }
+
+  public String installPrepared(Staged staged, UUID id) throws IOException {
+    return installAt(staged, "prepared/" + id);
   }
 
   private String installAt(Staged staged, String key) throws IOException {

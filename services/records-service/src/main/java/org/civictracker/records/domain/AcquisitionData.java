@@ -12,7 +12,8 @@ public final class AcquisitionData {
 
   public enum Kind {
     DISCOVERY,
-    ACQUISITION
+    ACQUISITION,
+    PREPARATION
   }
 
   public enum State {

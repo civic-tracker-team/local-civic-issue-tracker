@@ -153,6 +153,8 @@ class RecordsReadHttpTests {
       problem(get(path), 404, "RECORD_NOT_FOUND");
     }
     problem(get("/internal/v1/document-versions/" + first.versionId() + "/content"),
+        404, "PREPARED_CONTENT_NOT_FOUND");
+    problem(get("/internal/v1/document-versions/" + first.versionId() + "/content/unimplemented"),
         403, "ACCESS_DENIED");
   }
 

@@ -25,7 +25,48 @@ public final class OperationViews {
   public record AcquisitionCommand(
       UUID operationId, UUID discoveryId, UUID meetingId, UUID runId, UUID replacesOperationId) {}
 
-  public record Resume(UUID attemptId, UUID previousWorkerId, boolean previousWorkerStopped) {}
+  public record Resume(
+      UUID attemptId,
+      UUID previousWorkerId,
+      boolean previousWorkerStopped,
+      UUID ocrExecutionId,
+      Boolean previousOcrStopped) {
+    public Resume {
+      previousOcrStopped = Boolean.TRUE.equals(previousOcrStopped);
+    }
+
+    public Resume(UUID attemptId, UUID previousWorkerId, boolean previousWorkerStopped) {
+      this(attemptId, previousWorkerId, previousWorkerStopped, null, false);
+    }
+  }
+
+  public record PreparationCommand(
+      UUID operationId,
+      UUID acquisitionOperationId,
+      UUID runId,
+      String profileId,
+      Boolean freshRevision,
+      UUID replacesOperationId) {
+    public PreparationCommand {
+      freshRevision = Boolean.TRUE.equals(freshRevision);
+    }
+
+    public PreparationCommand(
+        UUID operationId,
+        UUID acquisitionOperationId,
+        UUID runId,
+        String profileId,
+        Boolean freshRevision) {
+      this(operationId, acquisitionOperationId, runId, profileId, freshRevision, null);
+    }
+  }
+
+  public record PreparationResult(
+      UUID acquisitionItemId,
+      UUID documentId,
+      UUID versionId,
+      UUID preparationId,
+      String profileFingerprint) {}
 
   public record Status(
       UUID id,
@@ -40,7 +81,11 @@ public final class OperationViews {
       String errorCode,
       UUID replacesOperationId,
       String resultUrl,
-      List<String> notes) {}
+      List<String> notes,
+      UUID blockedExecutionId,
+      PreparationProgress preparationProgress) {}
+
+  public record PreparationProgress(UUID versionId, Integer unitOrdinal) {}
 
   public record Discovered(UUID id, Meeting source, Instant observedAt) {}
 

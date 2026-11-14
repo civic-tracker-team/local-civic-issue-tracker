@@ -15,6 +15,7 @@ public class RecordsOperationWorker implements SmartLifecycle {
   private final RecordsOperations operations;
   private final RecordDiscovery discovery;
   private final RecordAcquisition acquisition;
+  private final RecordPreparation preparation;
   private final boolean enabled;
   private final long pollMillis;
   private volatile boolean running;
@@ -24,11 +25,13 @@ public class RecordsOperationWorker implements SmartLifecycle {
       RecordsOperations operations,
       RecordDiscovery discovery,
       RecordAcquisition acquisition,
+      RecordPreparation preparation,
       @Value("${records.operations.worker-enabled:false}") boolean enabled,
       @Value("${records.operations.poll-millis:500}") long pollMillis) {
     this.operations = operations;
     this.discovery = discovery;
     this.acquisition = acquisition;
+    this.preparation = preparation;
     this.enabled = enabled;
     this.pollMillis = pollMillis;
     if (pollMillis < 1) {
@@ -44,15 +47,16 @@ public class RecordsOperationWorker implements SmartLifecycle {
     }
     String failure = null;
     try {
-      if (operation.kind == Kind.DISCOVERY) {
-        discovery.execute(operation);
-      } else {
-        acquisition.execute(operation);
+      switch (operation.kind) {
+        case DISCOVERY -> discovery.execute(operation);
+        case ACQUISITION -> acquisition.execute(operation);
+        case PREPARATION -> preparation.execute(operation);
       }
       if (Thread.currentThread().isInterrupted()) {
         return true;
       }
     } catch (InterruptedException error) {
+      parkIfUnresolved(operation);
       Thread.currentThread().interrupt();
       return true;
     } catch (OperationProblem error) {
@@ -67,7 +71,21 @@ public class RecordsOperationWorker implements SmartLifecycle {
           error.getClass().getSimpleName());
       failure = "OPERATION_EXECUTION_FAILED";
     }
-    operations.complete(operation.id, operation.attemptId, failure);
+    if (!parkIfUnresolved(operation)) {
+      operations.complete(operation.id, operation.attemptId, failure);
+    }
+    return true;
+  }
+
+  private boolean parkIfUnresolved(org.civictracker.records.persistence.RecordOperation operation) {
+    if (operation.kind != Kind.PREPARATION) {
+      return false;
+    }
+    var execution = preparation.unresolved(operation.id);
+    if (execution == null) {
+      return false;
+    }
+    operations.park(operation.id, operation.attemptId, execution);
     return true;
   }
 

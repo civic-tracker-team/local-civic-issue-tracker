@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "civictracker-ocr"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "fastapi==0.121.0", "uvicorn==0.38.0", "python-multipart==0.0.20",
+  "pillow==12.1.0", "numpy==2.3.5", "paddleocr==3.7.0", "paddlex==3.7.2"
+]
+
+[project.optional-dependencies]
+test = ["pytest==8.4.2", "httpx==0.28.1"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

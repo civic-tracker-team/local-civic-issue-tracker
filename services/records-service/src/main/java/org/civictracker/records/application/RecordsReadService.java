@@ -139,7 +139,14 @@ public class RecordsReadService {
             .map(o ->
                 new RecordViews.Observation(
                     o.sourceUrl, o.resolvedUrl, o.publicationDate, o.observedAt, o.currentSource))
-            .toList());
+            .toList(),
+        entities
+            .createQuery(
+                "select id from PreparedContent where versionId=:v and sealedAt is not null order"
+                    + " by id",
+                UUID.class)
+            .setParameter("v", id)
+            .getResultList());
   }
 
   public record ArtifactReference(UUID id, String storageKey, long byteLength) {}
