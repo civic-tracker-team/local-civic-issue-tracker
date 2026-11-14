@@ -27,10 +27,13 @@ One mutable text column would simplify storage but invalidate existing evidence 
 - **Positive:** Evidence can continue to identify the text and source location actually used.
 - **Negative:** Repeated preparation retains additional revisions and requires explicit selection during reads.
 - **Follow-up:** Parser or routing changes must change the profile or pipeline revision. Semantic correctness still needs evidence review.
+- **Enforcement (added 2026-11-13, pending team review):** Database triggers refuse updates and deletes of a sealed revision and any insert, update or delete of its units and segments. They apply to the runtime role and to any role that cannot alter the tables; the table owner could still disable them. Unsealed revisions stay writable so that an interrupted preparation can resume.
 
 ## AI assistance and provenance
 
 Codex helped organize the revision and locator design and verify code-point handling. Kazim selected immutable prepared content and preservation of earlier revisions.
+
+On 2026-11-13, an AI-assisted review of PR #2 (Claude) found that immutability relied on application code alone. Michael Avila chose database enforcement, and Claude drafted the triggers and their tests. This addition is pending team review.
 
 ## References
 

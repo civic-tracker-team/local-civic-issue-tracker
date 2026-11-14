@@ -259,6 +259,70 @@ class RecordPreparationTests {
             .code());
   }
 
+  private JdbcTemplate migrations() {
+    return new JdbcTemplate(
+        new org.springframework.jdbc.datasource.DriverManagerDataSource(
+            environment.getRequiredProperty("spring.flyway.url"),
+            environment.getRequiredProperty("spring.flyway.user"),
+            environment.getRequiredProperty("spring.flyway.password")));
+  }
+
+  @Test
+  void theDatabaseRefusesToChangeASealedRevision() throws Exception {
+    var fixture = fixture(pdf(false, 1), Format.PDF);
+    UUID sealed = finish(command(fixture, false));
+    var before = reads.content(fixture.retained().versionId(), sealed, 0, 1);
+    UUID unit =
+        jdbc.queryForObject(
+            "select id from records.prepared_unit where preparation_id=?", UUID.class, sealed);
+    UUID segment =
+        jdbc.queryForObject(
+            "select id from records.prepared_segment where unit_id=?", UUID.class, unit);
+    for (var template : List.of(jdbc, migrations())) {
+      List<Runnable> writes =
+          List.of(
+              () ->
+                  template.update(
+                      "update records.prepared_content set profile_json='{}' where id=?", sealed),
+              () ->
+                  template.update(
+                      "update records.prepared_content set sealed_at=null where id=?", sealed),
+              () -> template.update("delete from records.prepared_content where id=?", sealed),
+              () ->
+                  template.update(
+                      "update records.prepared_unit set native_text='changed' where id=?", unit),
+              () -> template.update("delete from records.prepared_unit where id=?", unit),
+              () ->
+                  template.update(
+                      "insert into records.prepared_unit"
+                          + " (id,preparation_id,ordinal,disposition,native_text,notes_json)"
+                          + " values (?,?,1,'EMPTY','','[]')",
+                      UUID.randomUUID(),
+                      sealed),
+              () ->
+                  template.update(
+                      "update records.prepared_segment set text_value='changed' where id=?",
+                      segment),
+              () -> template.update("delete from records.prepared_segment where id=?", segment),
+              () ->
+                  template.update(
+                      "insert into records.prepared_segment"
+                          + " (id,unit_id,ordinal,text_value,method,locator_json,selected)"
+                          + " values (?,?,1,'added','PDF_NATIVE','{}',false)",
+                      UUID.randomUUID(),
+                      unit));
+      for (Runnable write : writes) {
+        var refused =
+            assertThrows(org.springframework.dao.DataAccessException.class, write::run);
+        assertTrue(
+            String.valueOf(refused.getMostSpecificCause().getMessage()).contains("is sealed"),
+            refused.getMostSpecificCause().getMessage());
+      }
+    }
+    assertEquals(
+        before.units(), reads.content(fixture.retained().versionId(), sealed, 0, 1).units());
+  }
+
   @Test
   void aChangedPipelineDoesNotReuseAnEarlierSealedRevision() throws Exception {
     var fixture = fixture(pdf(false, 1), Format.PDF);
@@ -275,13 +339,23 @@ class RecordPreparationTests {
             specification.htmlVersion(),
             "native-first-1");
     String legacyFingerprint =
-        org.civictracker.records.preparation.PdfContentExtractor.sha256(
+        org.civictracker.records.domain.Hashes.sha256(
             json.writeValueAsBytes(legacy));
-    jdbc.update(
-        "update records.prepared_content set profile_json=?,profile_fingerprint=? where id=?",
-        json.writeValueAsString(legacy),
-        legacyFingerprint,
-        legacyId);
+    // Simulate a revision sealed by the earlier pipeline. The sealed-revision trigger refuses this
+    // rewrite, so the fixture suspends it through the table owner for this one statement.
+    var migrations = migrations();
+    migrations.execute(
+        "alter table records.prepared_content disable trigger sealed_content_immutable");
+    try {
+      jdbc.update(
+          "update records.prepared_content set profile_json=?,profile_fingerprint=? where id=?",
+          json.writeValueAsString(legacy),
+          legacyFingerprint,
+          legacyId);
+    } finally {
+      migrations.execute(
+          "alter table records.prepared_content enable trigger sealed_content_immutable");
+    }
     UUID current = finish(command(fixture, false));
     assertNotEquals(legacyId, current);
     assertNotEquals(
@@ -451,12 +525,7 @@ class RecordPreparationTests {
     var fixture = fixture(pdf(false, 2), Format.PDF);
     var command = command(fixture, false);
     preparation.accept(command);
-    var migrations =
-        new JdbcTemplate(
-            new org.springframework.jdbc.datasource.DriverManagerDataSource(
-                environment.getRequiredProperty("spring.flyway.url"),
-                environment.getRequiredProperty("spring.flyway.user"),
-                environment.getRequiredProperty("spring.flyway.password")));
+    var migrations = migrations();
     migrations.execute(
         "alter table records.prepared_unit add constraint fixture_second_unit check (ordinal<1)");
     try {

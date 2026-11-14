@@ -107,6 +107,13 @@ public class RecordsOperationWorker implements SmartLifecycle {
                 System.Logger.Level.WARNING,
                 "Records worker cannot reconcile durable state: {0}",
                 error.getClass().getSimpleName());
+          } catch (Error error) {
+            // A scheduled task that throws stops silently, so record why before it does.
+            LOG.log(
+                System.Logger.Level.ERROR,
+                "Records worker stopped with {0}; claimed operations stay RUNNING",
+                error.getClass().getSimpleName());
+            throw error;
           }
         },
         0,

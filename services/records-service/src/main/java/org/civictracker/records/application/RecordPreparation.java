@@ -13,6 +13,7 @@ import org.civictracker.records.api.OperationViews;
 import org.civictracker.records.configuration.PreparationSettings;
 import org.civictracker.records.domain.AcquisitionData.Kind;
 import org.civictracker.records.domain.AcquisitionData.Target;
+import org.civictracker.records.domain.Hashes;
 import org.civictracker.records.domain.PreparationData.Input;
 import org.civictracker.records.domain.PreparationData.OcrRegion;
 import org.civictracker.records.domain.PreparationData.OcrResult;
@@ -44,7 +45,7 @@ import tools.jackson.databind.ObjectMapper;
 /** Prepares frozen owner inputs and commits each completed unit with its checkpoint. */
 @Service
 public class RecordPreparation {
-  public static final String PIPELINE = "native-first-2";
+  public static final String PIPELINE = "native-first-3";
   private final EntityManager entities;
   private final RecordsOperations operations;
   private final OriginalFileStore files;
@@ -132,18 +133,21 @@ public class RecordPreparation {
                   command.profileId(),
                   command.freshRevision(),
                   specification,
-                  PdfContentExtractor.sha256(json.writeValueAsBytes(specification)),
+                  Hashes.sha256(json.writeValueAsBytes(specification)),
                   inputs)),
           command.replacesOperationId());
     });
   }
 
   public static Specification specification(Profile profile) {
-    return new Specification(
-        profile,
-        Version.getVersion(),
-        Objects.toString(Jsoup.class.getPackage().getImplementationVersion(), "1.24.1"),
-        PIPELINE);
+    // Read from the loaded library, never a copied literal, so the fingerprint cannot name a
+    // version other than the one that ran.
+    String html = Jsoup.class.getPackage().getImplementationVersion();
+    String pdf = Version.getVersion();
+    if (html == null || pdf == null) {
+      throw new IllegalStateException("Preparation library versions are unavailable");
+    }
+    return new Specification(profile, pdf, html, PIPELINE);
   }
 
   public void execute(RecordOperation operation) throws IOException, InterruptedException {
@@ -220,59 +224,7 @@ public class RecordPreparation {
                         .findFirst()
                         .orElse(null);
                 var work = pdf.page(page, routing);
-                var segments = new ArrayList<>(work.nativeUnit().segments());
-                for (int image = 0; image < work.images().size(); image++) {
-                  var source = work.images().get(image);
-                  OcrResult result = recognize(operation, content.id, page, image, source, profile);
-                  if (!PdfContentExtractor.usableText(
-                      result.regions().stream()
-                          .map(OcrRegion::text)
-                          .collect(java.util.stream.Collectors.joining("\n")))) {
-                    throw new OperationProblem(422, "OCR_CONTENT_UNRESOLVED");
-                  }
-                  for (OcrRegion region : result.regions()) {
-                    if (region.text().isBlank()) {
-                      continue;
-                    }
-                    var placement = source.locator().image();
-                    var matrix = placement.imageToPage();
-                    List<Point> polygon =
-                        region.polygon().stream()
-                            .map(p ->
-                                new Point(
-                                    matrix.get(0) * p.x() + matrix.get(2) * p.y() + matrix.get(4),
-                                    matrix.get(1) * p.x() + matrix.get(3) * p.y() + matrix.get(5)))
-                            .toList();
-                    var locator = source.locator();
-                    segments.add(
-                        new Segment(
-                            UUID.randomUUID(),
-                            region.text(),
-                            "OCR",
-                            new PdfLocator(
-                                locator.page(),
-                                locator.pageLabel(),
-                                locator.width(),
-                                locator.height(),
-                                polygon,
-                                placement),
-                            region.score(),
-                            true));
-                  }
-                }
-                if (!work.images().isEmpty()
-                    && segments.stream()
-                        .noneMatch(
-                            s -> s.method().equals("OCR") && s.selected() && !s.text().isBlank())) {
-                  throw new OperationProblem(422, "OCR_CONTENT_UNRESOLVED");
-                }
-                if (segments.size() > profile.maxRegions()
-                    || segments.stream()
-                            .mapToLong(s -> s.text().codePointCount(0, s.text().length()))
-                            .sum()
-                        > profile.maxCharactersPerUnit()) {
-                  throw new OperationProblem(422, "PREPARATION_TEXT_LIMIT");
-                }
+                var segments = recognizedSegments(operation, content.id, page, work, profile);
                 save(
                     operation,
                     content.id,
@@ -304,6 +256,70 @@ public class RecordPreparation {
         });
       }
     }
+  }
+
+  /** Adds the selected OCR segments of one page to its native segments, in source order. */
+  private List<Segment> recognizedSegments(
+      RecordOperation operation,
+      UUID preparationId,
+      int page,
+      PdfContentExtractor.Work work,
+      Profile profile)
+      throws IOException, InterruptedException {
+    var segments = new ArrayList<>(work.nativeUnit().segments());
+    for (int image = 0; image < work.images().size(); image++) {
+      var source = work.images().get(image);
+      OcrResult result = recognize(operation, preparationId, page, image, source, profile);
+      if (!PdfContentExtractor.usableText(
+          result.regions().stream()
+              .map(OcrRegion::text)
+              .collect(java.util.stream.Collectors.joining("\n")))) {
+        throw new OperationProblem(422, "OCR_CONTENT_UNRESOLVED");
+      }
+      for (OcrRegion region : result.regions()) {
+        if (region.text().isBlank()) {
+          continue;
+        }
+        var placement = source.locator().image();
+        var matrix = placement.imageToPage();
+        List<Point> polygon =
+            region.polygon().stream()
+                .map(p ->
+                    new Point(
+                        matrix.get(0) * p.x() + matrix.get(2) * p.y() + matrix.get(4),
+                        matrix.get(1) * p.x() + matrix.get(3) * p.y() + matrix.get(5)))
+                .toList();
+        var locator = source.locator();
+        segments.add(
+            new Segment(
+                UUID.randomUUID(),
+                region.text(),
+                "OCR",
+                new PdfLocator(
+                    locator.page(),
+                    locator.pageLabel(),
+                    locator.width(),
+                    locator.height(),
+                    polygon,
+                    placement),
+                region.score(),
+                true));
+      }
+    }
+    if (!work.images().isEmpty()
+        && segments.stream()
+            .noneMatch(
+                s -> s.method().equals("OCR") && s.selected() && !s.text().isBlank())) {
+      throw new OperationProblem(422, "OCR_CONTENT_UNRESOLVED");
+    }
+    if (segments.size() > profile.maxRegions()
+        || segments.stream()
+                .mapToLong(s -> s.text().codePointCount(0, s.text().length()))
+                .sum()
+            > profile.maxCharactersPerUnit()) {
+      throw new OperationProblem(422, "PREPARATION_TEXT_LIMIT");
+    }
+    return segments;
   }
 
   private PreparedContent content(

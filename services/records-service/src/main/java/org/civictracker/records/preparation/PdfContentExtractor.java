@@ -9,10 +9,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
 import javax.imageio.ImageIO;
@@ -21,12 +18,14 @@ import org.apache.pdfbox.contentstream.PDFGraphicsStreamEngine;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImage;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.text.TextPosition;
 import org.civictracker.records.application.OperationProblem;
+import org.civictracker.records.domain.Hashes;
 import org.civictracker.records.domain.PreparationData.PdfLocator;
 import org.civictracker.records.domain.PreparationData.Placement;
 import org.civictracker.records.domain.PreparationData.Point;
@@ -48,9 +47,13 @@ public final class PdfContentExtractor implements AutoCloseable {
 
   public PdfContentExtractor(Path input, Profile profile) throws IOException {
     this.profile = profile;
-    document = Loader.loadPDF(input.toFile());
-    if (document.isEncrypted()
-        || !document.getCurrentAccessPermission().canExtractContent()
+    try {
+      // An owner-password-only PDF opens with the empty user password; any other password fails.
+      document = Loader.loadPDF(input.toFile());
+    } catch (InvalidPasswordException locked) {
+      throw new OperationProblem(422, "PDF_PREPARATION_UNSUPPORTED");
+    }
+    if (!document.getCurrentAccessPermission().canExtractContent()
         || document.getNumberOfPages() < 1
         || document.getNumberOfPages() > profile.maxPages()) {
       document.close();
@@ -232,7 +235,7 @@ public final class PdfContentExtractor implements AutoCloseable {
     }
     byte[] bytes = output.toByteArray();
     Placement placement =
-        new Placement(sha256(bytes), image.getWidth(), image.getHeight(), transform);
+        new Placement(Hashes.sha256(bytes), image.getWidth(), image.getHeight(), transform);
     return new ImageInput(bytes, locator(ordinal, frame, List.of(), placement));
   }
 
@@ -266,14 +269,6 @@ public final class PdfContentExtractor implements AutoCloseable {
       }
     }
     return true;
-  }
-
-  public static String sha256(byte[] value) {
-    try {
-      return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(value));
-    } catch (NoSuchAlgorithmException error) {
-      throw new IllegalStateException(error);
-    }
   }
 
   public static boolean usableText(String value) {

@@ -135,13 +135,13 @@ class PreparationExtractionTests {
         file,
         "<div id='MeetingContents'><section data-sectionid='s1'>"
             + "<div class='meeting-item' data-itemid='parent'>Before child"
-            + "<div class='agenda-item' data-itemid='child'><h3>Child recommendation</h3> "
+            + "<div class='meeting-item' data-itemid='child'><h3>Child recommendation</h3> "
             + "<a href='/attachment'>Child report</a></div>After child</div></section></div>");
     var units = HtmlContentExtractor.extract(file, profile(10000000));
     assertEquals(3, units.size());
     assertEquals(
-        List.of("Before child", "Child recommendation Child report", "After child"),
-        units.stream().map(u -> u.nativeText().replaceAll("\\s+", " ").strip()).toList());
+        List.of("Before child", "Child recommendation\nChild report", "After child"),
+        units.stream().map(PreparationData.Unit::nativeText).toList());
     var locators =
         units.stream()
             .map(u -> (PreparationData.HtmlLocator) u.segments().getFirst().locator())
@@ -170,6 +170,110 @@ class PreparationExtractionTests {
             .toList());
   }
 
+  static String htmlText(Path directory, String body) throws Exception {
+    Path file = Files.createTempFile(directory, "blocks", ".html");
+    Files.writeString(
+        file,
+        "<div id='MeetingContents'><section data-sectionid='s1'>"
+            + "<div class='meeting-item' data-itemid='i1'>"
+            + body
+            + "</div></section></div>");
+    var units = HtmlContentExtractor.extract(file, profile(10000000));
+    assertEquals(1, units.size());
+    assertEquals(units.getFirst().nativeText(), units.getFirst().segments().getFirst().text());
+    return units.getFirst().nativeText();
+  }
+
+  @Test
+  void adjacentHtmlBlocksKeepASeparator() throws Exception {
+    assertEquals("Approve\nResolution 12", htmlText(directory, "<p>Approve</p><p>Resolution 12</p>"));
+    assertEquals(
+        "Recommendation\nAdopt the budget",
+        htmlText(directory, "<h3>Recommendation</h3><p>Adopt the budget</p>"));
+    assertEquals(
+        "Item A\nItem B", htmlText(directory, "<ul><li>Item A</li><li>Item B</li></ul>"));
+    assertEquals(
+        "Contract amount\t$1,000\n250\tunits",
+        htmlText(
+            directory,
+            "<table><tr><th>Contract amount</th><td>$1,000</td></tr>"
+                + "<tr><td>250</td><td>units</td></tr></table>"));
+    assertEquals(
+        "Before\nA\tB\nC\nAfter",
+        htmlText(
+            directory,
+            "<p>Before</p><table><tbody><tr><td><p>A</p></td><td><p>B</p></td></tr>"
+                + "<tr><td>C</td><td></td></tr></tbody></table><p>After</p>"));
+    assertEquals(
+        "Item\tQty\tCost\nPaving\t\t$1,000\n\t2\t$5",
+        htmlText(
+            directory,
+            "<table><tr><td>Item</td><td>Qty</td><td>Cost</td></tr>"
+                + "<tr><td>Paving</td><td> </td><td>$1,000</td></tr>"
+                + "<tr><td><p></p></td><td>2</td><td>$5</td></tr></table>"));
+    assertEquals(
+        "Name\nChoose",
+        htmlText(
+            directory,
+            "<label>Name</label><textarea>typed</textarea><p>Choose</p>"
+                + "<select><option>One</option><option>Two</option></select>"));
+    assertEquals("A\nB", htmlText(directory, "<p>A</p><br><br><p>B</p>"));
+    assertEquals(
+        "Resolution 12-A",
+        htmlText(directory, "Reso<b>lution</b> <a href='/r'>12</a><span>-A</span>"));
+    assertEquals("Line one\nLine two", htmlText(directory, "Line one<br>Line two"));
+    assertEquals(
+        "Approve\nResolution 12",
+        htmlText(directory, "<p>Approve </p>\n   <p>\n Resolution 12</p>"));
+    assertEquals(
+        "Total: 1 000\u00a0units",
+        htmlText(directory, "<p>Total: 1 000\u00a0units</p>"));
+  }
+
+  @Test
+  void sectionsWithoutItemsSeparateTheirBlocks() throws Exception {
+    Path file = directory.resolve("section-blocks.html");
+    Files.writeString(
+        file,
+        "<div id='MeetingContents'><section data-sectionid='c'>"
+            + "<h2>Consent Calendar</h2><p>Routine matters</p></section></div>");
+    var units = HtmlContentExtractor.extract(file, profile(10000000));
+    assertEquals(
+        List.of("Consent Calendar\nRoutine matters"),
+        units.stream().map(PreparationData.Unit::nativeText).toList());
+  }
+
+  @Test
+  void preparationAndAcquisitionRecognizeTheSameAgendaItems() throws Exception {
+    String html =
+        "<div id='MeetingContents'><section data-sectionid='s1'>"
+            + "<div class='meeting-item' data-itemid='parent'>Parent"
+            + "<div class='agenda-item' data-itemid='child'>Child "
+            + "<a href='/api/compilemeetingattachmenthistory/historyattachment?historyId=7'>"
+            + "Report</a></div></div></section></div>";
+    Path file = directory.resolve("shared-items.html");
+    Files.writeString(file, html);
+    var packet =
+        new org.civictracker.records.portal.primegov.PrimeGovParser(
+                new tools.jackson.databind.ObjectMapper())
+            .packet(
+                new java.io.ByteArrayInputStream(
+                    html.getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+                java.net.URI.create("https://portal.example/Portal/Meeting?meetingTemplateId=1"));
+    var acquired =
+        packet.items().stream()
+            .map(org.civictracker.records.domain.AcquisitionData.Item::officialId)
+            .toList();
+    var prepared =
+        HtmlContentExtractor.extract(file, profile(10000000)).stream()
+            .map(u -> ((PreparationData.HtmlLocator) u.segments().getFirst().locator()).itemId())
+            .distinct()
+            .toList();
+    assertEquals(List.of("parent"), acquired);
+    assertEquals(acquired, prepared);
+    assertEquals("parent", packet.attachments().getFirst().itemId());
+  }
+
   @Test
   void htmlPreservesItemsUnicodeAndRemovesControlsWithoutRunningMarkup() throws Exception {
     Path file = directory.resolve("agenda.html");
@@ -182,7 +286,7 @@ class PreparationExtractionTests {
     var units = HtmlContentExtractor.extract(file, profile(10000000));
     assertEquals(2, units.size());
     String content = units.get(1).segments().getFirst().text();
-    assertTrue(content.contains("Recommendation only."));
+    assertEquals("Road proposal 😀\nRecommendation only.", content);
     assertFalse(units.toString().contains("request-token"));
     assertFalse(units.toString().contains("deleteEverything"));
     assertEquals("😀", PreparationData.passage("A😀B", 1, 2));
@@ -206,6 +310,51 @@ class PreparationExtractionTests {
       assertTrue(pdf.page(0, null).images().isEmpty());
       assertTrue(pdf.page(0, null).nativeUnit().segments().getFirst().selected());
       assertEquals("EMPTY", pdf.page(1, null).nativeUnit().disposition());
+    }
+  }
+
+  static Path encrypted(Path directory, String name, String user, boolean extract)
+      throws Exception {
+    Path file = directory.resolve(name);
+    try (var document = new PDDocument()) {
+      var page = new PDPage();
+      document.addPage(page);
+      try (var stream = new PDPageContentStream(document, page)) {
+        text(stream, "Council adopted the proposal.", 40, 700);
+      }
+      var permissions = new org.apache.pdfbox.pdmodel.encryption.AccessPermission();
+      permissions.setCanExtractContent(extract);
+      var policy =
+          new org.apache.pdfbox.pdmodel.encryption.StandardProtectionPolicy(
+              "owner-secret", user, permissions);
+      policy.setEncryptionKeyLength(256);
+      document.protect(policy);
+      document.save(file.toFile());
+    }
+    return file;
+  }
+
+  @Test
+  void anOwnerPasswordAloneDoesNotBlockPermittedExtraction() throws Exception {
+    Path file = encrypted(directory, "owner-only.pdf", "", true);
+    try (var pdf = new PdfContentExtractor(file, profile(10000000))) {
+      var unit = pdf.page(0, null).nativeUnit();
+      assertEquals("NATIVE", unit.disposition());
+      assertEquals("Council adopted the proposal.", unit.nativeText());
+    }
+  }
+
+  @Test
+  void encryptedPdfsThatForbidOrLockTextStayUnsupported() throws Exception {
+    for (Path file :
+        List.of(
+            encrypted(directory, "user-password.pdf", "user-secret", true),
+            encrypted(directory, "no-extraction.pdf", "", false))) {
+      assertEquals(
+          "PDF_PREPARATION_UNSUPPORTED",
+          assertThrows(
+                  OperationProblem.class, () -> new PdfContentExtractor(file, profile(10000000)))
+              .code());
     }
   }
 
