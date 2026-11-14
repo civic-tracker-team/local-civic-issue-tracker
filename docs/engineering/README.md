@@ -5,3 +5,4 @@
 | [srs/](srs/) | Software requirements and scope |
 | [spmp/](spmp/) | Project plan, schedule and risks |
 | [adr/](adr/) | Architecture decisions and rationale |
+| [design/](design/) | System design and service contracts |
