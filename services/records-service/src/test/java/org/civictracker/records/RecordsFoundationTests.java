@@ -481,13 +481,13 @@ class RecordsFoundationTests {
             environment.getRequiredProperty("spring.flyway.password"));
     JdbcTemplate migrations = new JdbcTemplate(source);
     assertEquals(
-        6,
+        8,
         migrations.queryForObject(
             "select count(*) from records.flyway_schema_history where success and version is not"
                 + " null",
             Integer.class));
     assertEquals(
-        6,
+        8,
         migrations.queryForObject(
             "select count(distinct version) from records.flyway_schema_history where success "
                 + "and version is not null",

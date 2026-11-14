@@ -1,7 +1,7 @@
 # OCR service
 
-Python source belongs in `src/civictracker_ocr/`, with tests in `tests/`.
+Python 3.12/FastAPI wrapper for PP-OCRv6 medium. Records uploads selected images and receives literal text, scores, polygons and model provenance. Native extraction and application persistence remain in records.
 
-Extracts text from source content when requested by the records service. Returns results to records for validation and persistence; the OCR wrapper does not modify application databases. Native text extraction remains preferred when adequate.
+One inference runs per instance. Execution references prevent duplicate calls from starting the same inference again within that instance. Its temporary result cache is not a durable processing database. A disconnected request does not release a running inference. OCR has no application SQL configuration.
 
-Only directories are scaffolded. The Python version, HTTP framework, OCR dependencies and runtime configuration are not selected by these placeholders. Archived experiments are not copied into the production service.
+Runtime settings, model setup, request contracts and recovery are described in [preparation setup](../../docs/development/RECORDS_PREPARATION.md). Source is under `src/civictracker_ocr/`; contract and regression tests are under `tests/`.

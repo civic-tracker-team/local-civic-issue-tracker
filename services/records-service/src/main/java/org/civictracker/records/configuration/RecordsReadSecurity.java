@@ -16,7 +16,7 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
-/** Configured service identities can read internal records but cannot write. */
+/** Separates internal read, processing and maintenance permissions. */
 @Configuration
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @EnableConfigurationProperties(RecordsReadSecurity.Credentials.class)
@@ -95,7 +95,8 @@ public class RecordsReadSecurity {
                 .requestMatchers(
                     HttpMethod.POST,
                     "/internal/v1/discovery-operations",
-                    "/internal/v1/acquisition-operations")
+                    "/internal/v1/acquisition-operations",
+                    "/internal/v1/preparation-operations")
                 .hasRole("RECORDS_PROCESS")
                 .requestMatchers(HttpMethod.GET, "/internal/v1/csrf")
                 .hasRole("RECORDS_PROCESS")
@@ -103,7 +104,8 @@ public class RecordsReadSecurity {
                     HttpMethod.GET,
                     "/internal/v1/operations/*",
                     "/internal/v1/operations/*/meetings",
-                    "/internal/v1/operations/*/originals")
+                    "/internal/v1/operations/*/originals",
+                    "/internal/v1/operations/*/preparations")
                 .hasRole("RECORDS_PROCESS")
                 .requestMatchers(HttpMethod.GET, "/internal/v1/meetings", "/internal/v1/meetings/*")
                 .hasRole("RECORDS_READ")
@@ -111,6 +113,7 @@ public class RecordsReadSecurity {
                     HttpMethod.GET,
                     "/internal/v1/documents/*",
                     "/internal/v1/document-versions/*",
+                    "/internal/v1/document-versions/*/content",
                     "/internal/v1/artifacts/*/bytes")
                 .hasRole("RECORDS_READ")
                 .anyRequest()
