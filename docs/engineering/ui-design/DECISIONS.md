@@ -49,6 +49,64 @@ Settled decisions for the web frontend's screen designs, with the reason for eac
 - **Rejected: d (Reader).** Looks low effort.
 - **Rejected: e (Bulletin).** Looks too much like a news site.
 
+## Refining direction a
+
+*Decided 2026-11-13. Answers to open questions 1 to 5; Michael accepted the recommended option for each.*
+
+- **No category filter on browse issues (6a) until FR-39 is confirmed.**
+  *Why:* categorization is in SRS v2.0 only if it stays simple (FR-39, FR-40). 6a works without it, and a filter is easy to add later.
+- **Rejected: designing for categories now.**
+- **Home (1a) takes the search callout from 1c, in a's style:** a bordered search panel with a larger field and "Try" example searches.
+  *Why:* it is the only part of c the team asked for.
+- **Rejected: keeping 1a's quieter search unchanged.**
+- **The issue timeline (3a) gets a compact timeline strip above the dated list,** after 3c.
+  *Why:* a long issue such as the parking structure spans nine meetings, and the strip shows that span before the reader scrolls.
+- **Rejected: a list-only timeline.**
+- **The record view (5a) keeps its connection notes in a's layout,** not beside each passage as in 5d.
+  *Why:* it is simpler, already works on phone, and covers the same requirement; the team found d's look low effort.
+- **Rejected: notes beside each passage on desktop.**
+- **After sign-off, 1a to 7a, their phone previews and `canvas.json` are copied into `docs/engineering/ui-design/designs/`.** The rest of the draft design source stays in `.local/design/`.
+  *Why:* the team can see the spec the frontend follows in version control.
+- **Rejected: keeping everything in `.local` with the public canvas as the only reference.**
+- **One global navigation on every screen: Search, Issues, Meetings,** with the current section marked by `aria-current`. "About the records" stays a link from the coverage notice.
+  *Why:* 1a and 2a used a different set from 3a to 7a. These three link to designed screens.
+
+## Frontend build
+
+*Decided 2026-11-15. Answers to open questions 6 to 9.*
+
+- **Styling is plain CSS with custom properties for direction a's tokens (color, type, spacing), in light and dark themes.** No styling package.
+  *Why:* a's designs are already a small token set, and a token file is simpler to restyle than a component library's theme.
+- **Rejected: a styled component library such as MUI or Mantine.** Its own look would have to be overridden to match a.
+- **Rejected for now: a headless library such as React Aria or Radix.** The seven screens use native links, forms, selects and disclosures; it can be proposed later if a widget needs it.
+- **Rejected: a utility framework such as Tailwind.**
+- **Routing uses TanStack Router with routes defined in code.**
+  *Why:* typed route and search parameters help an agent-assisted workflow catch broken links at compile time. Code routes avoid the extra Vite plugin that file routes need. The router runs only in the browser, so the Java services do not affect the choice; it does not type the data those services return.
+- **Rejected: React Router,** more widely documented but less type-safe. **Rejected: TanStack file routes,** which add `@tanstack/router-plugin`.
+- **Screens read typed sample data through a small API-client layer,** swapped for real calls as each service adds endpoints. Pages keep the "Sample data" badge.
+  *Why:* only the records service has read endpoints so far, and the screens can be built and reviewed now from the sample data already in the designs.
+- **Rejected: waiting for each service's API before building its screens.**
+- **npm with a committed `package-lock.json`, on the current Node LTS line.**
+  *Why:* npm ships with Node, so teammates need no extra tool.
+- **Rejected: pnpm.**
+- **Routes,** one per screen. Path parameters and search parameters are typed:
+
+  | Path | Screen |
+  |---|---|
+  | `/` | home (1a) |
+  | `/search?q=&in=&year=` | search results (2a) |
+  | `/issues` | browse issues (6a) |
+  | `/issues/$issueId` | issue timeline (3a) |
+  | `/meetings` | browse meetings (7a) |
+  | `/meetings/$meetingId` | meeting (4a) |
+  | `/records/$recordId?version=` | record (5a) |
+
+  *Why:* each address follows the navigation, and search filters and a record version can be shared as links.
+- **Rejected: records nested under meetings** (`/meetings/$meetingId/records/$recordId`). It makes links longer and assumes each record belongs to exactly one meeting.
+- **Inter is self-hosted.** Its woff2 files, taken from the official Inter release, are committed under `frontend/public/fonts/` with the font's OFL licence. No npm package is added. `system-ui` is the fallback.
+  *Why:* the screens match the designs, and visitors' browsers make no requests to Google.
+- **Rejected: a Google Fonts link** (a privacy cost for a civic site), **system fonts only** (the screens would drift from the designs), and **`@fontsource/inter`** (an extra dependency).
+
 ## Sharing and storage
 
 *Decided 2026-11-13.*
