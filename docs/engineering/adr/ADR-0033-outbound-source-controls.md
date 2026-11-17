@@ -16,6 +16,8 @@ Records uses configured HTTPS source and delivery hosts, validates redirect dest
 
 A persisted request reservation controls pacing for each source, including redirects. Connect and transfer deadlines, byte limits and redirect limits bound retrieval. A valid Retry-After response delays later access without starting an unlimited automatic retry loop. Partial or stalled transfers cannot be acknowledged as completed originals.
 
+On November 16, 2026, Kazim confirmed that the source's existing transfer timeout also bounds server-requested delays and pacing waits. Excessive Retry-After values fail explicitly without being persisted. An excessive saved gate fails immediately without being cleared or extended. This avoids a separate numerical default and prevents a persisted cooldown from occupying the worker for years.
+
 Profile settings are fixed when discovery is accepted. Their numerical values are deployment controls rather than promised throughput or product acceptance targets.
 
 ## Alternatives considered
@@ -31,6 +33,8 @@ Unrestricted redirects would weaken the configured source boundary. In-memory pa
 ## AI assistance and provenance
 
 Codex helped identify redirect and request-budget cases and check them against the adapter. Kazim accepted the constrained outbound access approach.
+
+Codex reproduced the excessive-delay defect and implemented regression checks for the November 16 refinement. Kazim selected reuse of the existing transfer timeout as the bound.
 
 ## References
 

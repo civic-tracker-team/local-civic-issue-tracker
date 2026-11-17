@@ -27,7 +27,9 @@ Supply source profiles through external Spring configuration. For example:
 
 These values control network access and resource use. They are not performance guarantees. The delivery host in the example is used by inspected official generated-PDF redirects. Host approval is explicit and includes every redirect destination. Public sources use HTTPS on the standard port. Local fixture servers require the loopback option and their configured port.
 
-Every request and redirect consumes a rate reservation. A valid `Retry-After` value from a 429 response delays later requests, while the current operation fails rather than entering an automatic retry loop. Identity encoding keeps byte lengths and checksums tied to the retained original.
+Every request and redirect consumes a rate reservation. A valid `Retry-After` value from a 429 response delays later requests, while the current operation fails rather than entering an automatic retry loop. The source profile's `transfer-timeout-millis` also bounds an acceptable server delay and each pacing wait. A longer delay returns `SOURCE_RETRY_AFTER_EXCESSIVE` without saving that delay. Numeric seconds and HTTP dates use the same bound; malformed headers leave the response as `SOURCE_RATE_LIMITED`.
+
+An already-saved gate beyond that bound returns `SOURCE_REQUEST_DELAY_EXCESSIVE` before making a request. It is neither extended nor silently cleared. Restarting does not clear a persisted gate, and recovery must account for that state rather than retrying into a long sleep. Identity encoding keeps byte lengths and checksums tied to the retained original.
 
 `records.operations.poll-millis` defaults to 500, `max-page-size` to 100 and `max-discovery-years` to 20. Discovery saves its resolved source profile with its inputs. Changing that configuration requires a new discovery operation.
 

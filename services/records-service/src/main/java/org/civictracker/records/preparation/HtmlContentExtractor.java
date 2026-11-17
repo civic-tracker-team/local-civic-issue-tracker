@@ -31,10 +31,47 @@ public final class HtmlContentExtractor {
    */
   private static final Set<String> BLOCKS =
       Set.of(
-          "address", "article", "aside", "blockquote", "caption", "center", "dd", "details",
-          "dialog", "div", "dl", "dt", "fieldset", "figcaption", "figure", "footer", "form", "h1",
-          "h2", "h3", "h4", "h5", "h6", "header", "hgroup", "hr", "legend", "li", "main", "menu",
-          "nav", "ol", "p", "pre", "section", "summary", "table", "tbody", "tfoot", "thead", "ul");
+          "address",
+          "article",
+          "aside",
+          "blockquote",
+          "caption",
+          "center",
+          "dd",
+          "details",
+          "dialog",
+          "div",
+          "dl",
+          "dt",
+          "fieldset",
+          "figcaption",
+          "figure",
+          "footer",
+          "form",
+          "h1",
+          "h2",
+          "h3",
+          "h4",
+          "h5",
+          "h6",
+          "header",
+          "hgroup",
+          "hr",
+          "legend",
+          "li",
+          "main",
+          "menu",
+          "nav",
+          "ol",
+          "p",
+          "pre",
+          "section",
+          "summary",
+          "table",
+          "tbody",
+          "tfoot",
+          "thead",
+          "ul");
 
   private static final Set<String> CELLS = Set.of("td", "th");
 
@@ -86,10 +123,10 @@ public final class HtmlContentExtractor {
   }
 
   /**
-   * Reads an element's text with a separator at each block edge: a newline between blocks and
-   * table rows, and a tab between cells of one row. Whitespace that the source places at a block
-   * edge is folded into that separator, so adjacent blocks are never merged and already-spaced
-   * sources do not gain blank lines. Inline elements add nothing, and a line break stays a newline.
+   * Reads an element's text with a separator at each block edge: a newline between blocks and table
+   * rows, and a tab between cells of one row. Whitespace that the source places at a block edge is
+   * folded into that separator, so adjacent blocks are never merged and already-spaced sources do
+   * not gain blank lines. Inline elements add nothing, and a line break stays a newline.
    */
   static String text(Element element) {
     var reader = new Separated();
@@ -118,22 +155,16 @@ public final class HtmlContentExtractor {
             start++;
           }
           value = value.substring(start);
-          if (!out.isEmpty()) {
-            int end = out.length();
-            while (end > 0 && whitespace(out.charAt(end - 1))) {
-              end--;
-            }
-            out.setLength(end);
-            if (cells > 0) {
-              // A cell edge outranks a block edge inside either cell.
-              if (row) {
-                out.append('\n');
-              }
-              out.append("\t".repeat(cells));
-            } else {
-              out.append('\n');
-            }
+          int end = out.length();
+          while (end > 0 && whitespace(out.charAt(end - 1))) {
+            end--;
           }
+          out.setLength(end);
+          if (end > 0 && (row || cells == 0)) {
+            out.append('\n');
+          }
+          // Leading empty cells need tabs even before the first text.
+          out.append("\t".repeat(cells));
           row = false;
           block = false;
           cells = 0;
@@ -189,8 +220,17 @@ public final class HtmlContentExtractor {
   }
 
   private static void add(List<Unit> units, String raw, HtmlLocator locator, Profile profile) {
-    String text = raw.replace("\r\n", "\n").strip();
-    if (text.isEmpty()) {
+    String normalized = raw.replace("\r\n", "\n");
+    int start = 0;
+    int end = normalized.length();
+    while (start < end && edgeWhitespace(normalized.charAt(start))) {
+      start++;
+    }
+    while (end > start && edgeWhitespace(normalized.charAt(end - 1))) {
+      end--;
+    }
+    String text = normalized.substring(start, end);
+    if (text.isBlank()) {
       return;
     }
     if (text.contains("\ufffd")) {
@@ -206,5 +246,9 @@ public final class HtmlContentExtractor {
             text,
             List.of(new Segment(UUID.randomUUID(), text, "HTML_NATIVE", locator, null, true)),
             List.of()));
+  }
+
+  private static boolean edgeWhitespace(char value) {
+    return value != '\t' && Character.isWhitespace(value);
   }
 }

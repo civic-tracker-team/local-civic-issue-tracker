@@ -186,12 +186,12 @@ class PreparationExtractionTests {
 
   @Test
   void adjacentHtmlBlocksKeepASeparator() throws Exception {
-    assertEquals("Approve\nResolution 12", htmlText(directory, "<p>Approve</p><p>Resolution 12</p>"));
+    assertEquals(
+        "Approve\nResolution 12", htmlText(directory, "<p>Approve</p><p>Resolution 12</p>"));
     assertEquals(
         "Recommendation\nAdopt the budget",
         htmlText(directory, "<h3>Recommendation</h3><p>Adopt the budget</p>"));
-    assertEquals(
-        "Item A\nItem B", htmlText(directory, "<ul><li>Item A</li><li>Item B</li></ul>"));
+    assertEquals("Item A\nItem B", htmlText(directory, "<ul><li>Item A</li><li>Item B</li></ul>"));
     assertEquals(
         "Contract amount\t$1,000\n250\tunits",
         htmlText(
@@ -225,9 +225,25 @@ class PreparationExtractionTests {
     assertEquals(
         "Approve\nResolution 12",
         htmlText(directory, "<p>Approve </p>\n   <p>\n Resolution 12</p>"));
+    assertEquals("Total: 1 000\u00a0units", htmlText(directory, "<p>Total: 1 000\u00a0units</p>"));
+  }
+
+  @Test
+  void theFirstTableRowKeepsItsLeadingEmptyColumns() throws Exception {
     assertEquals(
-        "Total: 1 000\u00a0units",
-        htmlText(directory, "<p>Total: 1 000\u00a0units</p>"));
+        "\tAmount\nContract\t$100",
+        htmlText(
+            directory,
+            "<table><tr><td></td><th>Amount</th></tr>"
+                + "<tr><td>Contract</td><td>$100</td></tr></table>"));
+    assertEquals(
+        "\t\tAmount",
+        htmlText(directory, "<table><tr><td> </td><td><p></p></td><td>Amount</td></tr></table>"));
+    assertEquals(
+        "\tA\tB\nAfter",
+        htmlText(
+            directory,
+            " \n<table><tr><td></td><td><p>A</p></td><td>B</td></tr></table><p>After</p> "));
   }
 
   @Test

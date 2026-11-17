@@ -45,7 +45,7 @@ import tools.jackson.databind.ObjectMapper;
 /** Prepares frozen owner inputs and commits each completed unit with its checkpoint. */
 @Service
 public class RecordPreparation {
-  public static final String PIPELINE = "native-first-3";
+  public static final String PIPELINE = "native-first-4";
   private final EntityManager entities;
   private final RecordsOperations operations;
   private final OriginalFileStore files;
@@ -308,14 +308,11 @@ public class RecordPreparation {
     }
     if (!work.images().isEmpty()
         && segments.stream()
-            .noneMatch(
-                s -> s.method().equals("OCR") && s.selected() && !s.text().isBlank())) {
+            .noneMatch(s -> s.method().equals("OCR") && s.selected() && !s.text().isBlank())) {
       throw new OperationProblem(422, "OCR_CONTENT_UNRESOLVED");
     }
     if (segments.size() > profile.maxRegions()
-        || segments.stream()
-                .mapToLong(s -> s.text().codePointCount(0, s.text().length()))
-                .sum()
+        || segments.stream().mapToLong(s -> s.text().codePointCount(0, s.text().length())).sum()
             > profile.maxCharactersPerUnit()) {
       throw new OperationProblem(422, "PREPARATION_TEXT_LIMIT");
     }

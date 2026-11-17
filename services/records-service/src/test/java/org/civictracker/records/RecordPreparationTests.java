@@ -312,8 +312,7 @@ class RecordPreparationTests {
                       UUID.randomUUID(),
                       unit));
       for (Runnable write : writes) {
-        var refused =
-            assertThrows(org.springframework.dao.DataAccessException.class, write::run);
+        var refused = assertThrows(org.springframework.dao.DataAccessException.class, write::run);
         assertTrue(
             String.valueOf(refused.getMostSpecificCause().getMessage()).contains("is sealed"),
             refused.getMostSpecificCause().getMessage());
@@ -337,10 +336,9 @@ class RecordPreparationTests {
             specification.profile(),
             specification.pdfVersion(),
             specification.htmlVersion(),
-            "native-first-1");
+            "native-first-3");
     String legacyFingerprint =
-        org.civictracker.records.domain.Hashes.sha256(
-            json.writeValueAsBytes(legacy));
+        org.civictracker.records.domain.Hashes.sha256(json.writeValueAsBytes(legacy));
     // Simulate a revision sealed by the earlier pipeline. The sealed-revision trigger refuses this
     // rewrite, so the fixture suspends it through the table owner for this one statement.
     var migrations = migrations();

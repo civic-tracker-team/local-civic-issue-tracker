@@ -72,6 +72,7 @@ class RecordAcquisitionTests {
       new AtomicReference<>("%PDF-1.7\nfirst\n%%EOF");
   private static final AtomicReference<String> HTML = new AtomicReference<>();
   private static final AtomicReference<String> MODE = new AtomicReference<>("normal");
+  private static final AtomicReference<String> RETRY_AFTER = new AtomicReference<>("2");
   private static final AtomicInteger DOWNLOADS = new AtomicInteger();
   private static final AtomicInteger CREDENTIAL_LEAKS = new AtomicInteger();
   private static final HttpServer SOURCE = source();
@@ -111,6 +112,7 @@ class RecordAcquisitionTests {
   void prepare() {
     officialMeeting = UUID.randomUUID().toString();
     MODE.set("normal");
+    RETRY_AFTER.set("2");
     DOWNLOADS.set(0);
     CREDENTIAL_LEAKS.set(0);
     PDF.set("%PDF-1.7\nfirst\n%%EOF");
@@ -598,13 +600,138 @@ class RecordAcquisitionTests {
     var denied =
         assertThrows(
             OperationProblem.class,
-            () -> portal.fetch(settings.required("fixture"), URI.create(BASE + "/rate-limit")));
+            () -> portal.fetch(rateProfile(3000), URI.create(BASE + "/rate-limit")));
     assertEquals("SOURCE_RATE_LIMITED", denied.code());
     Instant next =
         jdbc.queryForObject(
             "select next_allowed_at from records.portal_request_gate " + "where host='127.0.0.1'",
             (row, n) -> row.getTimestamp(1).toInstant());
     assertTrue(next.isAfter(Instant.now().plusMillis(1000)));
+  }
+
+  private Profile rateProfile(long timeout) {
+    var original = settings.required("fixture");
+    return new Profile(
+        original.baseUrl(),
+        original.allowedHosts(),
+        original.revision(),
+        original.requestIntervalMillis(),
+        original.connectTimeoutMillis(),
+        timeout,
+        original.maxBytes(),
+        original.maxRedirects(),
+        original.allowLoopback());
+  }
+
+  @Test
+  void excessiveRetryAfterIsRejectedWithoutPoisoningThePersistedGate() throws Exception {
+    for (String header :
+        List.of(
+            "315360000",
+            "9223372036854775807",
+            java.time.ZonedDateTime.now(java.time.ZoneOffset.UTC)
+                .plusYears(10)
+                .format(java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME))) {
+      RETRY_AFTER.set(header);
+      var denied =
+          assertThrows(
+              OperationProblem.class,
+              () -> portal.fetch(rateProfile(3000), URI.create(BASE + "/rate-limit")));
+      assertEquals("SOURCE_RETRY_AFTER_EXCESSIVE", denied.code());
+      Instant next =
+          jdbc.queryForObject(
+              "select next_allowed_at from records.portal_request_gate where host='127.0.0.1'",
+              (row, n) -> row.getTimestamp(1).toInstant());
+      assertFalse(next.isAfter(Instant.now().plusSeconds(3)));
+      try (var fetched = portal.fetch(rateProfile(3000), URI.create(BASE + "/pdf"))) {
+        assertEquals(PDF.get(), Files.readString(fetched.staged().path()));
+      }
+    }
+  }
+
+  @Test
+  void anExcessiveSavedGateFailsImmediatelyWithoutChangingItOrSendingARequest() throws Exception {
+    Instant future =
+        Instant.now().plusSeconds(315360000).truncatedTo(java.time.temporal.ChronoUnit.MICROS);
+    jdbc.update(
+        "insert into records.portal_request_gate(host,next_allowed_at) values (?,?) "
+            + "on conflict(host) do update set next_allowed_at=excluded.next_allowed_at",
+        "127.0.0.1",
+        java.sql.Timestamp.from(future));
+    try (var executor = Executors.newSingleThreadExecutor()) {
+      var check =
+          executor.submit(() ->
+              assertThrows(
+                  OperationProblem.class,
+                  () -> portal.fetch(rateProfile(3000), URI.create(BASE + "/pdf"))));
+      try {
+        assertEquals("SOURCE_REQUEST_DELAY_EXCESSIVE", check.get(2, TimeUnit.SECONDS).code());
+      } finally {
+        check.cancel(true);
+      }
+    }
+    assertEquals(0, DOWNLOADS.get());
+    assertEquals(
+        future,
+        jdbc.queryForObject(
+            "select next_allowed_at from records.portal_request_gate where host='127.0.0.1'",
+            (row, n) -> row.getTimestamp(1).toInstant()));
+  }
+
+  @Test
+  void retryAfterUsesTheExistingTimeoutBoundaryAndAcceptsHttpDates() {
+    RETRY_AFTER.set("3");
+    var atLimit =
+        assertThrows(
+            OperationProblem.class,
+            () -> portal.fetch(rateProfile(3000), URI.create(BASE + "/rate-limit")));
+    assertEquals("SOURCE_RATE_LIMITED", atLimit.code());
+    jdbc.update(
+        "update records.portal_request_gate set next_allowed_at=now() where host='127.0.0.1'");
+    var aboveLimit =
+        assertThrows(
+            OperationProblem.class,
+            () -> portal.fetch(rateProfile(2999), URI.create(BASE + "/rate-limit")));
+    assertEquals("SOURCE_RETRY_AFTER_EXCESSIVE", aboveLimit.code());
+    RETRY_AFTER.set(
+        java.time.ZonedDateTime.now(java.time.ZoneOffset.UTC)
+            .plusSeconds(2)
+            .format(java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME));
+    var dated =
+        assertThrows(
+            OperationProblem.class,
+            () -> portal.fetch(rateProfile(3000), URI.create(BASE + "/rate-limit")));
+    assertEquals("SOURCE_RATE_LIMITED", dated.code());
+    assertTrue(
+        jdbc.queryForObject(
+            "select next_allowed_at > now() from records.portal_request_gate where"
+                + " host='127.0.0.1'",
+            Boolean.class));
+  }
+
+  @Test
+  void anOrdinarySavedGateStillDelaysTheNextRequest() throws Exception {
+    Instant allowed =
+        Instant.now().plusMillis(100).truncatedTo(java.time.temporal.ChronoUnit.MICROS);
+    jdbc.update(
+        "insert into records.portal_request_gate(host,next_allowed_at) values (?,?) "
+            + "on conflict(host) do update set next_allowed_at=excluded.next_allowed_at",
+        "127.0.0.1",
+        java.sql.Timestamp.from(allowed));
+    try (var fetched = portal.fetch(rateProfile(3000), URI.create(BASE + "/pdf"))) {
+      assertFalse(fetched.observedAt().isBefore(allowed));
+      assertEquals(1, DOWNLOADS.get());
+    }
+  }
+
+  @Test
+  void malformedRetryAfterStillReportsRateLimitingWithoutAnExcessiveGate() {
+    RETRY_AFTER.set("not-a-date");
+    var denied =
+        assertThrows(
+            OperationProblem.class,
+            () -> portal.fetch(rateProfile(3000), URI.create(BASE + "/rate-limit")));
+    assertEquals("SOURCE_RATE_LIMITED", denied.code());
   }
 
   @Test
@@ -779,7 +906,7 @@ class RecordAcquisitionTests {
         return;
       }
       if (path.equals("/rate-limit")) {
-        exchange.getResponseHeaders().add("Retry-After", "2");
+        exchange.getResponseHeaders().add("Retry-After", RETRY_AFTER.get());
         exchange.sendResponseHeaders(429, -1);
         return;
       }
