@@ -228,8 +228,11 @@ public class PortalHttp implements DisposableBean {
               host);
           return next;
         });
-    long delay = Duration.between(Instant.now(), allowed).toMillis();
-    if (delay > 0) {
+    while (true) {
+      Duration delay = Duration.between(Instant.now(), allowed);
+      if (delay.isNegative() || delay.isZero()) {
+        return;
+      }
       Thread.sleep(delay);
     }
   }
