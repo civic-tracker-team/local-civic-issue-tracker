@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Home · Ledger</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.lg{container-type:inline-size}
+.lg-skip{position:absolute;left:12px;top:-80px;z-index:10;padding:12px 18px;border-radius:10px;background:var(--lg-focus);color:var(--lg-on-focus);font-weight:600;text-decoration:none}
+.lg-skip:focus{top:12px}
+.lg a:focus-visible,.lg button:focus-visible,.lg input:focus-visible,.lg select:focus-visible,.lg summary:focus-visible{outline:3px solid var(--lg-focus);outline-offset:2px;border-radius:4px}
+@container (max-width: 600px){.lg .lg-tap{display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box}}
+</style>
+</helmet>
+<div class="lg" style="position: relative; --lg-focus: {{t.focus}}; --lg-on-focus: {{t.onFocus}}; min-height: 100vh; background: {{t.bg}}; color: {{t.ink}}; font-family: Inter, system-ui, sans-serif; font-size: 16px; line-height: 1.5">
+  <a href="#main" class="lg-skip">Skip to main content</a>
+  <header style="border-bottom: 1px solid {{t.line}}">
+    <div style="max-width: 760px; margin: 0 auto; padding: 6px max(16px, 3%); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 20px">
+      <a href="#" style="display: flex; align-items: center; gap: 10px; min-height: 44px; color: {{t.ink}}; text-decoration: none; font-weight: 600; font-size: 15px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="{{t.accent}}" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 4v16"></path><path d="M5 8h9"></path><path d="M5 14h13"></path><circle cx="17" cy="8" r="2"></circle></svg>
+        Local Civic Issue Tracker
+      </a>
+      <nav aria-label="Main" style="display: flex; flex-wrap: wrap; align-items: center; gap: 0 18px; font-size: 14px">
+        <a href="#" aria-current="page" style="color: {{t.ink}}; font-weight: 600; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; padding: 12px 0">Search</a>
+        <a href="#" style="color: {{t.muted}}; text-decoration: none; padding: 12px 0">Issues</a>
+        <a href="#" style="color: {{t.muted}}; text-decoration: none; padding: 12px 0">Meetings</a>
+        <span style="font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: {{t.badgeBg}}; color: {{t.badgeInk}}">Sample data</span>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1" style="max-width: 760px; margin: 0 auto; padding: 56px max(16px, 3%) 72px; display: flex; flex-direction: column; gap: 48px">
+    <section aria-labelledby="h-search" style="display: flex; flex-direction: column; gap: 18px">
+      <h1 id="h-search" style="margin: 0; font-size: clamp(28px, 4vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em">Follow a City Council issue across meetings</h1>
+      <p style="margin: 0; color: {{t.muted}}; font-size: 17px">Search in your own words. You don't need a meeting date or the city's official terms.</p>
+      <form role="search" action="#" style="display: flex; flex-direction: column; gap: 14px; padding: clamp(18px, 4%, 28px); background: {{t.surface}}; border: 2px solid {{t.accent}}; border-radius: 16px">
+        <label for="q1a" style="font-size: 15px; font-weight: 600">Search issues, records and meetings</label>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px">
+          <div style="flex: 1 1 260px; min-width: 0; display: flex; align-items: center; gap: 10px; height: 56px; box-sizing: border-box; padding: 0 6px 0 16px; background: {{t.bg}}; border: 1px solid {{t.field}}; border-radius: 12px">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{t.muted}}" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+            <input id="q1a" type="search" placeholder="Try “parking structure” or “rental permits”" style="flex: 1; min-width: 0; height: 44px; padding: 0 4px; font: inherit; font-size: 17px; color: {{t.ink}}; background: transparent; border: 0">
+          </div>
+          <button type="submit" style="flex: 0 0 auto; height: 56px; padding: 0 26px; font: inherit; font-size: 17px; font-weight: 600; color: {{t.onAccent}}; background: {{t.accent}}; border: 0; border-radius: 12px; cursor: pointer">Search</button>
+        </div>
+        <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px">
+          <legend style="float: left; padding: 0; margin-right: 6px; font-size: 14px; color: {{t.muted}}">Look in</legend>
+          <label style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; min-height: 44px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: {{t.accent}}"> Issues</label>
+          <label style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; min-height: 44px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: {{t.accent}}"> Records</label>
+          <label style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; min-height: 44px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: {{t.accent}}"> Meetings</label>
+        </fieldset>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 14px">
+          <span style="color: {{t.muted}}">Try</span>
+          <sc-for list="{{tries}}" as="q" hint-placeholder-count="4">
+            <a href="#" class="lg-tap" style="display: inline-flex; align-items: center; padding: 8px 14px; border-radius: 999px; background: {{t.chip}}; color: {{t.ink}}; text-decoration: none; font-weight: 500">{{q}}</a>
+          </sc-for>
+        </div>
+      </form>
+    </section>
+
+    <section aria-labelledby="h-cov" style="display: flex; flex-direction: column; gap: 14px; padding: 22px; background: {{t.surface}}; border: 1px solid {{t.line}}; border-radius: 14px">
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 16px">
+        <h2 id="h-cov" style="margin: 0; font-size: 15px; font-weight: 600">What this collection covers</h2>
+        <a href="#" class="lg-tap" style="font-size: 14px; color: {{t.link}}">About the records</a>
+      </div>
+      <p style="margin: 0; font-size: 15px; color: {{t.muted}}">San Bernardino City Council, <strong style="color: {{t.ink}}; font-weight: 600">Jan 2023 – Oct 2026</strong>: agendas, minutes, staff reports, attachments, official transcripts and cancellation notices from 92 scheduled meetings (90 held, 2 cancelled). Anything outside this set won't appear in results.</p>
+      <div role="img" aria-label="Meetings held per month, January 2023 to October 2026: usually two a month. 23 held in 2023, 24 in 2024, 24 in 2025 and 19 so far in 2026. One meeting was cancelled in July 2024 and one in September 2026; one is upcoming in November 2026." style="display: grid; grid-template-columns: 40px repeat(12, minmax(0, 1fr)); gap: 4px; max-width: 560px; font-size: 12px; color: {{t.muted}}">
+        <span></span>
+        <sc-for list="{{initials}}" as="m" hint-placeholder-count="12"><span style="text-align: center">{{m}}</span></sc-for>
+        <sc-for list="{{covYears}}" as="y" hint-placeholder-count="4">
+          <span style="align-self: center; font-weight: 600; color: {{t.ink}}">{{y.year}}</span>
+          <sc-for list="{{y.cells}}" as="c" hint-placeholder-count="12">
+            <span style="height: 18px; box-sizing: border-box; border-radius: 3px; background: {{c.bg}}; border: {{c.border}}"></span>
+          </sc-for>
+        </sc-for>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 12px; color: {{t.muted}}" aria-hidden="true">
+        <span>Meetings held: fewer</span>
+        <span style="width: 12px; height: 12px; border-radius: 2px; background: {{t.heat1}}"></span>
+        <span style="width: 12px; height: 12px; border-radius: 2px; background: {{t.heat2}}"></span>
+        <span style="width: 12px; height: 12px; border-radius: 2px; background: {{t.heat3}}"></span>
+        <span>more</span>
+        <span style="margin-left: 12px; width: 12px; height: 12px; box-sizing: border-box; border-radius: 2px; border: 2px dashed {{t.cancel}}"></span><span>a meeting was cancelled</span>
+        <span style="margin-left: 12px; width: 12px; height: 12px; box-sizing: border-box; border-radius: 2px; border: 2px solid {{t.planLine}}"></span><span>upcoming</span>
+      </div>
+    </section>
+
+    <section aria-labelledby="h-latest" style="display: flex; flex-direction: column; gap: 28px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px">
+        <h2 id="h-latest" style="margin: 0; font-size: 20px; font-weight: 600">Latest developments</h2>
+        <a href="#" class="lg-tap" style="font-size: 14px; color: {{t.link}}">All issues</a>
+      </div>
+      <sc-for list="{{days}}" as="d" hint-placeholder-count="3">
+        <div style="display: flex; flex-wrap: wrap; gap: 8px 28px">
+          <div style="flex: 0 0 150px; display: flex; flex-direction: column; gap: 2px; padding-top: 2px">
+            <span style="font-size: 14px; font-weight: 600">{{d.date}}</span>
+            <a href="#" class="lg-tap" style="align-self: flex-start; font-size: 13px; color: {{t.link}}">{{d.meeting}}</a>
+          </div>
+          <ul style="flex: 999 1 380px; min-width: 0; list-style: none; margin: 0; padding: 0 0 0 20px; border-left: 2px solid {{t.line}}; display: flex; flex-direction: column; gap: 18px">
+            <sc-for list="{{d.items}}" as="it" hint-placeholder-count="2">
+              <li style="display: flex; flex-direction: column; gap: 6px">
+                <a href="#" class="lg-tap" style="font-weight: 600; color: {{t.ink}}; text-decoration-color: {{t.muted}}; text-underline-offset: 3px">{{it.issue}}</a>
+                <span style="color: {{t.body}}; font-size: 15px">{{it.text}}</span>
+                <span style="{{it.tagStyle}}">{{it.tag}}</span>
+              </li>
+            </sc-for>
+          </ul>
+        </div>
+      </sc-for>
+    </section>
+
+    <footer style="border-top: 1px solid {{t.line}}; padding-top: 20px; font-size: 13px; color: {{t.muted}}">Summaries are written from the official records and link back to them. Results cover only the records imported into this collection; if something isn't here, the city may still have discussed it.</footer>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1280,"height":1680}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const themes = {
+      light: { focus: '#0F766E', onFocus: '#FFFFFF', bg: '#FAFAF9', surface: '#FFFFFF', ink: '#1C1917', body: '#292524', muted: '#57534E', line: '#E7E5E4', field: '#78716C', accent: '#0F766E', onAccent: '#FFFFFF', link: '#0F766E', chip: '#F0EFEC', cancel: '#9A3412', badgeBg: '#FEF3C7', badgeInk: '#78350F', heat0: '#E7E5E4', heat1: '#A7DCD3', heat2: '#3BA99A', heat3: '#0F766E', statedBg: '#F0FDFA', statedInk: '#115E59', statedLine: '#5EB8AC', infInk: '#9A3412', infLine: '#C2410C', planInk: '#1E40AF', planLine: '#6B8DDB' },
+      dark: { focus: '#5EEAD4', onFocus: '#042F2E', bg: '#121212', surface: '#1B1B1A', ink: '#F5F5F4', body: '#E7E5E4', muted: '#A8A29E', line: '#33312F', field: '#6B6560', accent: '#2DD4BF', onAccent: '#042F2E', link: '#5EEAD4', chip: '#262523', cancel: '#FDBA74', badgeBg: '#422006', badgeInk: '#FDE68A', heat0: '#2A2A28', heat1: '#155E56', heat2: '#1E9384', heat3: '#2DD4BF', statedBg: '#0E2A27', statedInk: '#99F6E4', statedLine: '#1E9384', infInk: '#FDBA74', infLine: '#EA8A3C', planInk: '#BFDBFE', planLine: '#5B7FD0' }
+    };
+    const t = themes[this.props.theme] || themes.light;
+    const base = 'align-self: flex-start; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 6px; ';
+    const tag = (k) => ({
+      stated: base + 'background: ' + t.statedBg + '; color: ' + t.statedInk + '; border: 1px solid ' + t.statedLine,
+      inferred: base + 'color: ' + t.infInk + '; border: 1px dashed ' + t.infLine,
+      planned: base + 'color: ' + t.planInk + '; border: 1px dotted ' + t.planLine,
+      proposed: base + 'color: ' + t.muted + '; border: 1px solid ' + t.line,
+      unknown: base + 'color: ' + t.muted + '; font-style: italic; border: 1px solid ' + t.line
+    })[k];
+    const heat = [t.heat0, t.heat1, t.heat2, t.heat3];
+    // Same sample counts as 7a: meetings held per month; -1 = upcoming, null = not yet.
+    const counts = { 2023: [2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2], 2024: [2, 2, 3, 2, 2, 2, 1, 2, 2, 2, 2, 2], 2025: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], 2026: [2, 2, 2, 2, 2, 2, 2, 2, 1, 2, -1, null] };
+    const cancelled = { '2024-6': true, '2026-8': true };
+    const covYears = [2023, 2024, 2025, 2026].map((y) => ({ year: y, cells: counts[y].map((n, i) => {
+      if (n === null) return { bg: 'transparent', border: '1px dashed ' + t.line };
+      if (n === -1) return { bg: 'transparent', border: '2px solid ' + t.planLine };
+      return { bg: heat[Math.min(n, 3)], border: cancelled[y + '-' + i] ? '2px dashed ' + t.cancel : '0' };
+    }) }));
+    const initials = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
+    const tries = ['parking garage', 'short-term rentals', 'my street repaving', 'water rates'];
+    const days = [
+      { date: 'Oct 15, 2026', meeting: 'Regular meeting', items: [
+        { issue: 'Downtown parking structure', text: 'Council approved the design contract, 5–2.', tag: 'Stated in minutes', tagStyle: tag('stated') },
+        { issue: 'Short-term rental ordinance', text: 'First reading held. Second reading is planned for Nov 5, 2026.', tag: 'Planned · not yet happened', tagStyle: tag('planned') }
+      ]},
+      { date: 'Oct 1, 2026', meeting: 'Regular meeting', items: [
+        { issue: 'Street resurfacing program', text: 'A staff report proposes adding 14 street segments to next year’s list.', tag: 'Proposed · no action yet', tagStyle: tag('proposed') },
+        { issue: 'Northside fire station replacement', text: 'The construction bid award was postponed to a later meeting.', tag: 'Inferred link · may be incorrect', tagStyle: tag('inferred') }
+      ]},
+      { date: 'Sep 17, 2026', meeting: 'Regular meeting', items: [
+        { issue: 'Park restroom renovations', text: 'Listed on the agenda; the available records don’t say what was decided.', tag: 'Outcome not in available records', tagStyle: tag('unknown') }
+      ]}
+    ];
+    return { t, covYears, initials, tries, days };
+  }
+}
+</script>
+</body>
+</html>
