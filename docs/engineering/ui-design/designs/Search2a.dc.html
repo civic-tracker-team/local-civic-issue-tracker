@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Search results · Ledger</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.lg{container-type:inline-size}
+.lg-skip{position:absolute;left:12px;top:-80px;z-index:10;padding:12px 18px;border-radius:10px;background:var(--lg-focus);color:var(--lg-on-focus);font-weight:600;text-decoration:none}
+.lg-skip:focus{top:12px}
+.lg a:focus-visible,.lg button:focus-visible,.lg input:focus-visible,.lg select:focus-visible,.lg summary:focus-visible{outline:3px solid var(--lg-focus);outline-offset:2px;border-radius:4px}
+@container (max-width: 600px){.lg .lg-tap{display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box}}
+</style>
+</helmet>
+<div class="lg" style="position: relative; --lg-focus: {{t.focus}}; --lg-on-focus: {{t.onFocus}}; min-height: 100vh; background: {{t.bg}}; color: {{t.ink}}; font-family: Inter, system-ui, sans-serif; font-size: 16px; line-height: 1.5">
+  <a href="#main" class="lg-skip">Skip to main content</a>
+  <header style="border-bottom: 1px solid {{t.line}}">
+    <div style="max-width: 760px; margin: 0 auto; padding: 6px max(16px, 3%); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 20px">
+      <a href="#" style="display: flex; align-items: center; gap: 10px; min-height: 44px; color: {{t.ink}}; text-decoration: none; font-weight: 600; font-size: 15px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="{{t.accent}}" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 4v16"></path><path d="M5 8h9"></path><path d="M5 14h13"></path><circle cx="17" cy="8" r="2"></circle></svg>
+        Local Civic Issue Tracker
+      </a>
+      <nav aria-label="Main" style="display: flex; flex-wrap: wrap; align-items: center; gap: 0 18px; font-size: 14px">
+        <a href="#" aria-current="page" style="color: {{t.ink}}; font-weight: 600; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; padding: 12px 0">Search</a>
+        <a href="#" style="color: {{t.muted}}; text-decoration: none; padding: 12px 0">Issues</a>
+        <a href="#" style="color: {{t.muted}}; text-decoration: none; padding: 12px 0">Meetings</a>
+        <span style="font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: {{t.badgeBg}}; color: {{t.badgeInk}}">Sample data</span>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1" style="max-width: 760px; margin: 0 auto; padding: 32px max(16px, 3%) 72px; display: flex; flex-direction: column; gap: 36px">
+    <div style="display: flex; flex-direction: column; gap: 16px">
+    <h1 style="margin: 0; font-size: clamp(26px, 3.6vw, 32px); line-height: 1.2; font-weight: 600; letter-spacing: -0.02em">Results for “parking downtown”</h1>
+    <form role="search" action="#" style="display: flex; flex-direction: column; gap: 12px">
+      <label for="q2a" style="font-size: 14px; font-weight: 600">Search issues, records and meetings</label>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <input id="q2a" type="search" value="parking downtown" style="flex: 1 1 260px; min-width: 0; height: 48px; box-sizing: border-box; padding: 0 16px; font: inherit; color: {{t.ink}}; background: {{t.surface}}; border: 1px solid {{t.field}}; border-radius: 10px">
+        <button type="submit" style="height: 48px; padding: 0 22px; font: inherit; font-weight: 600; color: {{t.onAccent}}; background: {{t.accent}}; border: 0; border-radius: 10px; cursor: pointer">Search</button>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px">
+        <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px">
+          <legend style="float: left; padding: 0; margin-right: 4px; font-size: 14px; color: {{t.muted}}">Show</legend>
+          <label style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; min-height: 44px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: {{t.accent}}"> Issues (2)</label>
+          <label style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; min-height: 44px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: {{t.accent}}"> Records (41)</label>
+          <label style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; min-height: 44px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: {{t.accent}}"> Meetings (12)</label>
+        </fieldset>
+        <label style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: {{t.muted}}">Meeting year
+          <select style="height: 44px; padding: 0 10px; font: inherit; color: {{t.ink}}; background: {{t.surface}}; border: 1px solid {{t.field}}; border-radius: 8px"><option>Any</option><option>2026</option><option>2025</option><option>2024</option><option>2023</option></select>
+        </label>
+      </div>
+    </form>
+    </div>
+
+    <p role="status" style="margin: 0; padding: 14px 16px; border-radius: 10px; background: {{t.note}}; font-size: 14px; color: {{t.body}}">55 results from the imported collection only: San Bernardino City Council records, Jan 2023 – Oct 2026. Records outside it can't appear here. <a href="#" style="color: {{t.link}}">What's included</a></p>
+
+    <section aria-labelledby="g-iss" style="display: flex; flex-direction: column; gap: 14px">
+      <h2 id="g-iss" style="margin: 0; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: {{t.muted}}">Issues · 2</h2>
+      <sc-for list="{{issues}}" as="i" hint-placeholder-count="2">
+        <div style="display: flex; flex-direction: column; gap: 4px; padding-left: 16px; border-left: 3px solid {{t.accent}}">
+          <a href="#" class="lg-tap" style="font-size: 19px; font-weight: 600; color: {{t.ink}}">{{i.name}}</a>
+          <span style="color: {{t.body}}; font-size: 15px">{{i.summary}}</span>
+          <span style="font-size: 13px; color: {{t.muted}}">{{i.meta}}</span>
+        </div>
+      </sc-for>
+    </section>
+
+    <section aria-labelledby="g-rec" style="display: flex; flex-direction: column; gap: 22px">
+      <h2 id="g-rec" style="margin: 0; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: {{t.muted}}">Records · 41</h2>
+      <sc-for list="{{records}}" as="r" hint-placeholder-count="4">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <span style="font-size: 13px; color: {{t.muted}}">{{r.kind}} · {{r.date}}</span>
+          <a href="#" class="lg-tap" style="font-weight: 600; color: {{t.ink}}">{{r.title}}</a>
+          <span style="font-size: 15px; color: {{t.body}}">…{{r.pre}}<mark style="background: {{t.mark}}; color: {{t.ink}}; padding: 0 2px; border-radius: 3px">{{r.hit}}</mark>{{r.post}}…</span>
+          <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 13px">
+            <span style="color: {{r.linkInk}}; font-style: {{r.linkStyle}}">{{r.issue}}</span>
+            <sc-if value="{{r.basis}}" hint-placeholder-val="{{true}}"><span style="{{r.basisStyle}}">{{r.basis}}</span></sc-if>
+            <a href="#" class="lg-tap" style="color: {{t.link}}">Original document</a>
+          </span>
+        </div>
+      </sc-for>
+      <a href="#" style="align-self: flex-start; padding: 12px 16px; border: 1px solid {{t.line}}; border-radius: 10px; color: {{t.ink}}; text-decoration: none; font-weight: 500; font-size: 14px">Show all 41 records</a>
+    </section>
+
+    <section aria-labelledby="g-mtg" style="display: flex; flex-direction: column; gap: 10px">
+      <h2 id="g-mtg" style="margin: 0; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: {{t.muted}}">Meetings · 12</h2>
+      <sc-for list="{{meetings}}" as="m" hint-placeholder-count="3">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; padding: 12px 0; border-bottom: 1px solid {{t.line}}">
+          <a href="#" class="lg-tap" style="font-weight: 600; color: {{t.ink}}">{{m.date}}</a>
+          <span style="font-size: 14px; color: {{t.muted}}">{{m.note}}</span>
+        </div>
+      </sc-for>
+      <a href="#" style="align-self: flex-start; padding: 12px 0; color: {{t.link}}; font-size: 14px">Show all 12 meetings</a>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1280,"height":1640}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const themes = {
+      light: { focus: '#0F766E', onFocus: '#FFFFFF', bg: '#FAFAF9', surface: '#FFFFFF', note: '#F0EFEC', ink: '#1C1917', body: '#292524', muted: '#57534E', line: '#E7E5E4', field: '#78716C', accent: '#0F766E', onAccent: '#FFFFFF', link: '#0F766E', mark: '#C9F0E8', badgeBg: '#FEF3C7', badgeInk: '#78350F', statedBg: '#F0FDFA', statedInk: '#115E59', statedLine: '#5EB8AC', infInk: '#9A3412', infLine: '#C2410C' },
+      dark: { focus: '#5EEAD4', onFocus: '#042F2E', bg: '#121212', surface: '#1B1B1A', note: '#1F1E1C', ink: '#F5F5F4', body: '#E7E5E4', muted: '#A8A29E', line: '#33312F', field: '#6B6560', accent: '#2DD4BF', onAccent: '#042F2E', link: '#5EEAD4', mark: '#145A52', badgeBg: '#422006', badgeInk: '#FDE68A', statedBg: '#0E2A27', statedInk: '#99F6E4', statedLine: '#1E9384', infInk: '#FDBA74', infLine: '#EA8A3C' }
+    };
+    const t = themes[this.props.theme] || themes.light;
+    const base = 'font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 6px; white-space: nowrap; ';
+    const basis = {
+      stated: { basis: 'Stated', basisStyle: base + 'background: ' + t.statedBg + '; color: ' + t.statedInk + '; border: 1px solid ' + t.statedLine },
+      inferred: { basis: 'Inferred link · may be incorrect', basisStyle: base + 'color: ' + t.infInk + '; border: 1px dashed ' + t.infLine }
+    };
+    const linked = (s, k) => Object.assign({ issue: 'Part of: ' + s, linkInk: t.muted, linkStyle: 'normal' }, basis[k || 'stated']);
+    const none = { issue: 'Not linked to any issue yet', linkInk: t.muted, linkStyle: 'italic', basis: '', basisStyle: '' };
+    return {
+      t,
+      issues: [
+        { name: 'Downtown parking structure', summary: 'A proposed public garage near the civic center, now in design after an Oct 15, 2026 contract approval.', meta: '9 meetings · Mar 2024 – Oct 2026' },
+        { name: 'Civic center parking permits', summary: 'Changes to employee and visitor permit zones around City Hall.', meta: '4 meetings · Jan 2025 – Jun 2026' }
+      ],
+      records: [
+        { kind: 'Minutes', date: 'Oct 15, 2026', title: 'Regular meeting minutes, item 12', pre: 'agreement for design of the ', hit: 'downtown parking', post: ' structure. Motion carried 5–2', ...linked('Downtown parking structure') },
+        { kind: 'Staff report', date: 'Mar 6, 2024', title: 'Parking demand study, downtown core', pre: 'peak occupancy in the ', hit: 'downtown parking', post: ' district exceeded 90 percent', ...linked('Downtown parking structure') },
+        { kind: 'Staff report', date: 'Jul 2, 2025', title: 'Parking citation fee schedule update', pre: 'citation fees for ', hit: 'parking', post: ' violations in the downtown zone', ...none },
+        { kind: 'Attachment', date: 'Oct 15, 2026', title: 'Exhibit A: design services scope', pre: 'a multi-level ', hit: 'parking', post: ' structure of approximately 600 spaces', ...linked('Downtown parking structure') }
+      ],
+      meetings: [
+        { date: 'Thu, Oct 15, 2026 · Regular meeting', note: '2 matching agenda items' },
+        { date: 'Wed, Jul 2, 2025 · Regular meeting', note: '1 matching agenda item' },
+        { date: 'Wed, Mar 6, 2024 · Study session', note: '3 matching agenda items' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

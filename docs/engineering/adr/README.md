@@ -45,3 +45,9 @@ Records name the requirements version they use. Later records can refine an earl
 | ADR-0038 | Evaluate whole meetings before adopting model inference | 2026-11-17 |
 | ADR-0039 | Resolve model-selected source ranges in analysis | 2026-11-17 |
 | ADR-0040 | Freeze the host-resolved findings contract for T06 | 2026-11-17 |
+| ADR-0042 | Style the frontend with plain CSS and design tokens | 2026-11-15 |
+| ADR-0043 | Use TanStack Router with typed, code-defined routes | 2026-11-15 |
+| ADR-0044 | Read screen data through a typed API-client layer, starting with sample data | 2026-11-15 |
+| ADR-0045 | Use npm with a committed lockfile on the current Node LTS line | 2026-11-15 |
+| ADR-0046 | Self-host the Inter font | 2026-11-15 |
+| ADR-0047 | Add a light and dark theme toggle that starts from the system setting | 2026-11-18 |

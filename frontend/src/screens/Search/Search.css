@@ -1,0 +1,40 @@
+.search-screen { max-width: 760px; margin: -4px auto 0; display: flex; flex-direction: column; gap: 36px; }
+.search-screen h1 { font-size: clamp(26px, 3.6vw, 32px); line-height: 1.2; }
+.search-screen .search-top { display: flex; flex-direction: column; gap: 16px; }
+.search-screen form { display: flex; flex-direction: column; gap: 12px; }
+.search-screen form > label { font-size: 14px; font-weight: 600; }
+.search-screen .search-query-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.search-screen .search-query-row input { flex: 1 1 260px; min-width: 0; height: 48px; padding: 0 16px; }
+.search-screen button { height: 48px; padding: 0 22px; font-weight: 600; color: var(--on-accent); background: var(--accent); border: 0; }
+.search-screen .search-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px; }
+.search-screen fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; }
+.search-screen legend { float: left; padding: 0; margin-right: 4px; font-size: 14px; color: var(--muted); }
+.search-screen fieldset label { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; min-height: 44px; }
+.search-screen input[type=checkbox] { width: 18px; height: 18px; min-height: 18px; padding: 0; margin: 3px; }
+.search-screen .search-year { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+.search-screen select { height: 44px; padding: 0 10px; border-radius: 8px; }
+.search-screen .search-notice { padding: 14px 16px; border-radius: 10px; background: var(--note); font-size: 14px; color: var(--body); }
+.search-screen section { display: flex; flex-direction: column; }
+.search-screen h2 { margin: 0; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.search-screen .search-issues { gap: 14px; }
+.search-screen .search-issues article { display: flex; flex-direction: column; gap: 4px; padding-left: 16px; border-left: 3px solid var(--accent); }
+.search-screen .search-issues article > a { font-size: 19px; font-weight: 600; color: var(--ink); }
+.search-screen article p { color: var(--body); font-size: 15px; }
+.search-screen .search-issues article > span { font-size: 13px; color: var(--muted); }
+.search-screen .search-records { gap: 22px; }
+.search-screen .search-records article { display: flex; flex-direction: column; gap: 6px; }
+.search-screen .search-record-meta { font-size: 13px; color: var(--muted); }
+.search-screen .search-record-title { font-weight: 600; color: var(--ink); }
+.search-screen mark { background: var(--mark); color: var(--ink); padding: 0 2px; border-radius: 3px; }
+.search-screen .search-record-links { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 13px; color: var(--muted); }
+.search-screen .search-record-links .basis-tag { padding: 1px 7px; }
+.search-screen .search-unlinked { font-style: italic; }
+.search-screen .search-original { color: var(--muted); }
+.search-screen .search-subset { align-self: flex-start; padding: 12px 16px; border: 1px solid var(--line); border-radius: 10px; color: var(--muted); font-size: 14px; }
+.search-screen .search-meetings { gap: 10px; }
+.search-screen .search-meetings > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.search-screen .search-meetings a { font-weight: 600; color: var(--ink); }
+.search-screen .search-meetings span { font-size: 14px; color: var(--muted); }
+.search-screen .search-coverage { font-size: 14px; color: var(--muted); }
+.search-screen .search-coverage summary { padding: 12px 0; color: var(--link); }
+@media (max-width: 600px) { .search-screen fieldset label { min-width: 44px; } }
