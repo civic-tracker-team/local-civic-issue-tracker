@@ -1,0 +1,54 @@
+{
+  "name": "Conditional staff recommendation",
+  "source": {
+    "unit": "EX2",
+    "lines": [
+      {
+        "number": 90002,
+        "text": "From: Public Works Department"
+      },
+      {
+        "number": 90003,
+        "text": "Staff recommends executing the Cedar Avenue paving contract, subject to grant award."
+      }
+    ]
+  },
+  "reply": {
+    "issues": [
+      {
+        "id": "i1",
+        "matterType": "PROJECT",
+        "name": "Cedar Avenue paving",
+        "priorIssueId": null
+      }
+    ],
+    "developments": [
+      {
+        "evidence": [
+          {
+            "firstLine": 90002,
+            "lastLine": 90003
+          }
+        ],
+        "finding": {
+          "kind": "PROPOSAL",
+          "proposedBy": "STAFF",
+          "planned": []
+        },
+        "does": "execute the Cedar Avenue paving contract, subject to grant award",
+        "links": [
+          {
+            "issueId": "i1",
+            "basis": "SOURCE_STATED",
+            "evidence": [
+              {
+                "firstLine": 90002,
+                "lastLine": 90003
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

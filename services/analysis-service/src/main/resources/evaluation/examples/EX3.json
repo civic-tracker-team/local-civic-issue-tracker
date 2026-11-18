@@ -1,0 +1,78 @@
+{
+  "name": "One action addressing two matters",
+  "source": {
+    "unit": "EX3",
+    "lines": [
+      {
+        "number": 90004,
+        "text": "Minutes, April 3, 2026."
+      },
+      {
+        "number": 90005,
+        "text": "The City Council directed staff to study future uses of Parcel Alpha"
+      },
+      {
+        "number": 90006,
+        "text": "and seek confirmation of a proposed county contribution to the Elm Street shelter."
+      },
+      {
+        "number": 90007,
+        "text": "RESULT: Adopted [6-1]."
+      }
+    ]
+  },
+  "reply": {
+    "issues": [
+      {
+        "id": "i1",
+        "matterType": "PROPERTY",
+        "name": "Parcel Alpha",
+        "priorIssueId": null
+      },
+      {
+        "id": "i2",
+        "matterType": "PROJECT",
+        "name": "Elm Street shelter",
+        "priorIssueId": null
+      }
+    ],
+    "developments": [
+      {
+        "evidence": [
+          {
+            "firstLine": 90005,
+            "lastLine": 90007
+          }
+        ],
+        "finding": {
+          "kind": "ACTION",
+          "actedBy": "CITY_COUNCIL",
+          "planned": []
+        },
+        "does": "direct staff to study future uses of Parcel Alpha and seek confirmation of a proposed county contribution to the Elm Street shelter",
+        "links": [
+          {
+            "issueId": "i1",
+            "basis": "SOURCE_STATED",
+            "evidence": [
+              {
+                "firstLine": 90005,
+                "lastLine": 90005
+              }
+            ]
+          },
+          {
+            "issueId": "i2",
+            "basis": "SOURCE_STATED",
+            "evidence": [
+              {
+                "firstLine": 90006,
+                "lastLine": 90007
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

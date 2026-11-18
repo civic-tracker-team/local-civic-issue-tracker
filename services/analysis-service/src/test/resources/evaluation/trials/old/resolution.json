@@ -1,0 +1,21 @@
+[
+  {
+    "selection": {
+      "unit": "U1",
+      "firstLine": 1,
+      "lastLine": 1
+    },
+    "spans": [
+      {
+        "documentId": "00000000-0000-4000-8000-000000000001",
+        "versionId": "00000000-0000-4000-8000-000000000002",
+        "preparationId": "00000000-0000-4000-8000-000000000003",
+        "profileFingerprint": "synthetic",
+        "segmentId": "00000000-0000-4000-8000-000000000004",
+        "start": 0,
+        "end": 32,
+        "text": "Council approved bridge repairs."
+      }
+    ]
+  }
+]

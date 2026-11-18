@@ -1,0 +1,50 @@
+{
+  "name": "Agenda report recommendation",
+  "source": {
+    "unit": "EX1",
+    "lines": [
+      {
+        "number": 90001,
+        "text": "It is recommended that the Mayor and City Council of Riverton receive the Maple Park Footpath and Citywide Neighborhood Programs update and provide direction."
+      }
+    ]
+  },
+  "reply": {
+    "issues": [
+      {
+        "id": "i1",
+        "matterType": "PROJECT",
+        "name": "Maple Park Footpath",
+        "priorIssueId": null
+      }
+    ],
+    "developments": [
+      {
+        "evidence": [
+          {
+            "firstLine": 90001,
+            "lastLine": 90001
+          }
+        ],
+        "finding": {
+          "kind": "PROPOSAL",
+          "proposedBy": "NOT_STATED",
+          "planned": []
+        },
+        "does": "receive the Maple Park Footpath and Citywide Neighborhood Programs update and provide direction",
+        "links": [
+          {
+            "issueId": "i1",
+            "basis": "SOURCE_STATED",
+            "evidence": [
+              {
+                "firstLine": 90001,
+                "lastLine": 90001
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
