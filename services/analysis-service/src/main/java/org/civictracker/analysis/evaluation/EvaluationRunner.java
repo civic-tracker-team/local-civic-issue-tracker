@@ -39,6 +39,7 @@ public final class EvaluationRunner {
     boolean acquired = false;
     boolean dispatched = false;
     boolean reconciled = false;
+    Throwable failure = null;
     try {
       Files.writeString(
           admission, output.toAbsolutePath().normalize().toString(), StandardOpenOption.CREATE_NEW);
@@ -112,6 +113,7 @@ public final class EvaluationRunner {
       receipt.put("state", state);
       return state;
     } catch (InterruptedException exception) {
+      failure = exception;
       receipt.put(
           "state",
           dispatched && !reconciled
@@ -121,6 +123,7 @@ public final class EvaluationRunner {
       Thread.currentThread().interrupt();
       throw exception;
     } catch (IOException | RuntimeException exception) {
+      failure = exception;
       receipt.put(
           "state",
           dispatched && !reconciled
@@ -131,8 +134,23 @@ public final class EvaluationRunner {
     } finally {
       receipt.put("finishedAt", Instant.now().toString());
       receipt.put("runtimeReconciliationRequired", acquired && dispatched && !reconciled);
-      save(output, "receipt.json", receipt);
-      if (acquired && (!dispatched || reconciled)) Files.delete(admission);
+      Throwable cleanupFailure = failure;
+      try {
+        save(output, "receipt.json", receipt);
+      } catch (IOException | RuntimeException exception) {
+        if (cleanupFailure == null) cleanupFailure = exception;
+        else cleanupFailure.addSuppressed(exception);
+      }
+      try {
+        if (acquired && (!dispatched || reconciled)) Files.delete(admission);
+      } catch (IOException | RuntimeException exception) {
+        if (cleanupFailure == null) cleanupFailure = exception;
+        else cleanupFailure.addSuppressed(exception);
+      }
+      if (failure == null) {
+        if (cleanupFailure instanceof IOException io) throw io;
+        if (cleanupFailure instanceof RuntimeException runtime) throw runtime;
+      }
     }
   }
 

@@ -4,7 +4,6 @@ package org.civictracker.analysis.domain;
 public record Problem(Code code, String at) {
   public enum Code {
     MALFORMED_REPLY,
-    UNKNOWN_UNIT,
     LINE_OUT_OF_RANGE,
     REVERSED_RANGE,
     RANGE_CROSSES_UNITS,
@@ -17,6 +16,7 @@ public record Problem(Code code, String at) {
     INVALID_CALENDAR_DATE,
     REVERSED_DATE_RANGE,
     OCCURRENCE_WITHOUT_RECORD,
+    OCCURRENCE_AFTER_MEETING,
     MEETING_DATE_MISMATCH,
     EVIDENCE_TEXT_MISMATCH,
     UNRESOLVED_EVIDENCE_REFERENCE,

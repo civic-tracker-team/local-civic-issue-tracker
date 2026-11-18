@@ -27,7 +27,7 @@ Each development has `evidence`, `finding`, `does` and `links` in schema order. 
 | `EARLIER_ACTION` | `actedBy`, `occurred`, `planned` | `RECORDED` | Model-stated occurrence, meeting date and planned dates |
 | `UNCLEAR` | `planned` | `UNCERTAIN` | Meeting date and any planned dates |
 
-The proposer enum excludes the Council as a collective actor. A recommendation addressed to Council does not establish who proposed it. Day, month and year dates use one value. Ranges use two endpoints, while unknown dates have neither. Java checks calendar validity and ordering. `EARLIER_ACTION` represents reported history, but its inclusion in scored reference scope remains open.
+The proposer enum excludes the Council as a collective actor. A recommendation addressed to Council does not establish who proposed it. Day, month and year dates use one value. Ranges use two endpoints, while unknown dates have neither. Java checks calendar validity and ordering. For an occurrence date, the earliest allowed day must not follow the source meeting date. A month starts on its first day, a year on January 1, and a range at its start. Unknown dates remain unknown. `EARLIER_ACTION` represents reported history, but its inclusion in scored reference scope remains open.
 
 Kazim made two scope decisions on November 17, 2026. T5 includes agenda recommendations to receive a report and provide direction as `PROPOSAL` developments. T6 treats collective phrases as broad subjects rather than issues. Broad grouping belongs to the flat categories under C-49 through C-51, outside T06. These are Kazim's decisions, without a claim of team or instructor approval.
 
@@ -44,10 +44,12 @@ These codes invalidate a reply or canonical candidate:
 | Area | Codes |
 |---|---|
 | Shape and content | `MALFORMED_REPLY`, `EMPTY_TEXT` |
-| Citation selection | `UNKNOWN_UNIT`, `LINE_OUT_OF_RANGE`, `REVERSED_RANGE`, `RANGE_CROSSES_UNITS`, `BLANK_RANGE`, `MISSING_EVIDENCE` |
+| Citation selection | `LINE_OUT_OF_RANGE`, `REVERSED_RANGE`, `RANGE_CROSSES_UNITS`, `BLANK_RANGE`, `MISSING_EVIDENCE` |
 | Identities and references | `DUPLICATE_ID`, `UNKNOWN_ISSUE`, `DUPLICATE_ASSOCIATION`, `UNKNOWN_PRIOR_ISSUE`, `UNRESOLVED_EVIDENCE_REFERENCE` |
 | Source integrity | `EVIDENCE_TEXT_MISMATCH` |
-| Dates | `INVALID_CALENDAR_DATE`, `REVERSED_DATE_RANGE`, `OCCURRENCE_WITHOUT_RECORD`, `MEETING_DATE_MISMATCH` |
+| Dates | `INVALID_CALENDAR_DATE`, `REVERSED_DATE_RANGE`, `OCCURRENCE_WITHOUT_RECORD`, `OCCURRENCE_AFTER_MEETING`, `MEETING_DATE_MISMATCH` |
+
+Validation and runtime-handling revision, November 18, 2026: `OCCURRENCE_AFTER_MEETING` is invalidating, and the obsolete unit-address code is removed. A failed runtime-properties check before completion is sent returns `RUNTIME_FAILED` and releases admission. Effective generation settings must echo the requested integer seed. Receipt-save failures preserve the original exception and do not bypass admission cleanup; uncertain execution still retains admission. Display escaping also covers NEL and Unicode line/paragraph separators. The frozen instructions, examples, schema and `grounded-findings-3` revision are unchanged.
 
 `UNUSED_ISSUE` and `LINKS_MERGED` are the only non-invalidating notes. Unused issues stay in the raw reply but are omitted from canonical candidates. Evidence, developments, issues and associations remain separate.
 

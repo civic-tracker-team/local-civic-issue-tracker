@@ -74,6 +74,27 @@ class ModelInputRenderingTests {
   }
 
   @Test
+  void unicodeLineSeparatorsStayInsideOneAddressedSourceLine() {
+    for (int separator : List.of(0x85, 0x2028, 0x2029)) {
+      String retained = "before" + Character.toString(separator) + "after";
+      var input = input(source(unit(0, "OCR", retained)));
+      var index = CitationIndex.build(input);
+      var rendered = ModelContract.request(index).inputText();
+      assertEquals(1, index.lineCount());
+      assertTrue(
+          rendered
+              .lines()
+              .anyMatch(line ->
+                  line.equals(
+                      "L1 before"
+                          + String.format(java.util.Locale.ROOT, "\\u%04x", separator)
+                          + "after")));
+      assertFalse(rendered.contains(Character.toString(separator)));
+      assertEquals(retained, input.selectedSegments().getFirst().text());
+    }
+  }
+
+  @Test
   void headersKeepEverySectionAndMarkDispositionChanges() {
     var input =
         input(

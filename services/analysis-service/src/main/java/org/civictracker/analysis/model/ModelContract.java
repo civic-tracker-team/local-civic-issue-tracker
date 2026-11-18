@@ -292,7 +292,7 @@ public final class ModelContract {
         .forEach(c -> {
           if (c == '\\') out.append("\\\\");
           else if (c == '<') out.append("\\u003c");
-          else if (c < 0x20 && c != '\t')
+          else if ((c < 0x20 && c != '\t') || c == 0x85 || c == 0x2028 || c == 0x2029)
             out.append(String.format(java.util.Locale.ROOT, "\\u%04x", c));
           else out.appendCodePoint(c);
         });

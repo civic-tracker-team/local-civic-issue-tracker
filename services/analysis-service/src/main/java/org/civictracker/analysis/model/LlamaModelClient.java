@@ -88,10 +88,29 @@ public final class LlamaModelClient implements ModelClient {
     if (!prepared.fits())
       return new Attempt(
           State.CAPACITY_REJECTED, "", "Prompt plus output exceeds context", Map.of());
-    var current = http.get("/props");
-    if (!EvaluationJson.sha256(current.toString())
-        .equals(prepared.identity().get("propertiesSha256"))) {
-      throw new IOException("Runtime configuration changed after preflight");
+    try {
+      var current = http.get("/props");
+      if (!EvaluationJson.sha256(current.toString())
+          .equals(prepared.identity().get("propertiesSha256")))
+        return new Attempt(
+            State.RUNTIME_FAILED,
+            "",
+            "Runtime configuration changed before completion was sent",
+            Map.of());
+    } catch (InterruptedException exception) {
+      Thread.currentThread().interrupt();
+      return new Attempt(
+          State.RUNTIME_FAILED,
+          "",
+          "Runtime check interrupted before completion was sent",
+          Map.of());
+    } catch (IOException | RuntimeException exception) {
+      return new Attempt(
+          State.RUNTIME_FAILED,
+          "",
+          "Runtime check failed before completion was sent: "
+              + exception.getClass().getSimpleName(),
+          Map.of());
     }
     var request = new LinkedHashMap<String, Object>(sampling.requestOptions());
     request.putAll(
@@ -156,6 +175,12 @@ public final class LlamaModelClient implements ModelClient {
       return new Attempt(
           State.INVALID_OUTPUT, content, "Generation did not terminate at EOS", receipt);
     var effective = result.path("generation_settings");
+    var effectiveSeed = effective.path("seed");
+    if (!effectiveSeed.isIntegralNumber()
+        || !effectiveSeed.canConvertToInt()
+        || effectiveSeed.asInt() != seed)
+      return new Attempt(
+          State.INVALID_OUTPUT, content, "Effective seed differs from the requested seed", receipt);
     for (var option : sampling.requestOptions().entrySet()) {
       var actual = effective.path(option.getKey());
       if (!actual.isNumber()

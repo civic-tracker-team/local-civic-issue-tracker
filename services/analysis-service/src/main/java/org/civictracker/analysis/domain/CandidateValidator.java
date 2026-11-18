@@ -76,6 +76,17 @@ public final class CandidateValidator {
         String location = at + ".dates[" + d + "]";
         var invalid = dateProblem(date);
         if (invalid != null) problems.add(new Problem(invalid, location));
+        if (invalid == null && date.role() == Candidates.Role.OCCURRENCE) {
+          LocalDate earliest =
+              switch (date.precision()) {
+                case DAY, RANGE -> LocalDate.parse(date.start());
+                case MONTH -> YearMonth.parse(date.start()).atDay(1);
+                case YEAR -> Year.parse(date.start()).atDay(1);
+                case UNKNOWN -> null;
+              };
+          if (earliest != null && earliest.isAfter(input.meetingDate()))
+            problems.add(new Problem(Problem.Code.OCCURRENCE_AFTER_MEETING, location));
+        }
         if (date.role() == Candidates.Role.OCCURRENCE
             && development.status() != Candidates.Status.RECORDED)
           problems.add(new Problem(Problem.Code.OCCURRENCE_WITHOUT_RECORD, location));

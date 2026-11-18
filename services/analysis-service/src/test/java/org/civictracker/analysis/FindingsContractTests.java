@@ -174,6 +174,79 @@ class FindingsContractTests {
   }
 
   @Test
+  void occurrenceAfterMeetingIsInvalidForEveryKnownPrecision() {
+    var base = input(List.of("one\ntwo"));
+    var input =
+        new MeetingInput(
+            base.meetingId(),
+            base.officialId(),
+            LocalDate.of(2026, 1, 15),
+            base.title(),
+            base.sources(),
+            base.priorIssues());
+    for (String date :
+        List.of(
+            "{\"precision\":\"DAY\",\"value\":\"2099-12-31\",\"approximate\":false}",
+            "{\"precision\":\"MONTH\",\"value\":\"2026-02\",\"approximate\":false}",
+            "{\"precision\":\"YEAR\",\"value\":\"2027\",\"approximate\":true}",
+            "{\"precision\":\"RANGE\",\"start\":\"2026-01-16\",\"end\":\"2026-02-01\",\"approximate\":false}")) {
+      var result =
+          interpreted(
+              reply(
+                  "{\"kind\":\"EARLIER_ACTION\",\"actedBy\":\"STAFF\",\"occurred\":"
+                      + date
+                      + ",\"planned\":[]}"),
+              input);
+      assertFalse(result.accepted(), date);
+      var problem = result.problems().getFirst();
+      assertEquals("OCCURRENCE_AFTER_MEETING", problem.code().name());
+      assertTrue(problem.code().invalidates());
+      assertEquals("developments[0].dates[0]", problem.at());
+    }
+  }
+
+  @Test
+  void occurrenceUsesEarliestAllowedDateAndActionKeepsMeetingDate() {
+    var base = input(List.of("one\ntwo"));
+    var input =
+        new MeetingInput(
+            base.meetingId(),
+            base.officialId(),
+            LocalDate.of(2026, 1, 15),
+            base.title(),
+            base.sources(),
+            base.priorIssues());
+    for (String date :
+        List.of(
+            "{\"precision\":\"DAY\",\"value\":\"2026-01-15\",\"approximate\":false}",
+            "{\"precision\":\"MONTH\",\"value\":\"2026-01\",\"approximate\":false}",
+            "{\"precision\":\"YEAR\",\"value\":\"2026\",\"approximate\":true}",
+            "{\"precision\":\"RANGE\",\"start\":\"2026-01-01\",\"end\":\"2099-12-31\",\"approximate\":false}",
+            "{\"precision\":\"UNKNOWN\",\"approximate\":false}")) {
+      assertTrue(
+          interpreted(
+                  reply(
+                      "{\"kind\":\"EARLIER_ACTION\",\"actedBy\":\"STAFF\",\"occurred\":"
+                          + date
+                          + ",\"planned\":[]}"),
+                  input)
+              .accepted(),
+          date);
+    }
+    var action = interpreted(reply(FindingsRegressionTests.ACTION), input);
+    assertTrue(action.accepted());
+    assertEquals(
+        input.meetingDate().toString(),
+        action.candidates().developments().getFirst().dates().getFirst().start());
+  }
+
+  @Test
+  void problemCodesContainNoObsoleteUnitAddressError() {
+    assertFalse(
+        Arrays.stream(Problem.Code.values()).anyMatch(c -> c.name().equals("UNKNOWN_UNIT")));
+  }
+
+  @Test
   void oldRolesUnitsSubjectsAndCoercionsAreMalformed() {
     var input = input(List.of("one\ntwo"));
     var index = CitationIndex.build(input);
