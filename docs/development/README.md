@@ -44,6 +44,7 @@ Records needs its database and storage configuration before startup. Internal re
 | [Records reads](RECORDS_READS.md) | Metadata, exact-version reads and original downloads |
 | [Records acquisition](RECORDS_ACQUISITION.md) | PrimeGov configuration, commands and recovery |
 | [Record preparation](RECORDS_PREPARATION.md) | Native extraction, OCR and prepared-content reads |
+| [Model evaluation](MODEL_EVALUATION.md) | Pinned meeting inputs, local inference and reviewed association metrics |
 
 The [design overview](../engineering/design/DESIGN_OVERVIEW.md) explains service ownership and processing. Architecture decisions are in `docs/engineering/adr/`.
 

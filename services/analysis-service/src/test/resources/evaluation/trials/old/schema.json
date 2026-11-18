@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "properties": {
+    "developments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {},
+          "status": {},
+          "dates": {},
+          "citations": {},
+          "associations": {}
+        }
+      }
+    }
+  }
+}

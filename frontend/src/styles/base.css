@@ -1,0 +1,51 @@
+@font-face { font-family: Inter; src: url('/fonts/InterVariable.woff2') format('woff2'); font-weight: 100 900; font-display: swap; font-style: normal; }
+@font-face { font-family: Inter; src: url('/fonts/InterVariable-Italic.woff2') format('woff2'); font-weight: 100 900; font-display: swap; font-style: italic; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--font-body); }
+a { color: var(--link); text-underline-offset: 3px; }
+button, input, select, textarea { font: inherit; }
+button, select, summary { cursor: pointer; }
+input, select, button { min-height: 44px; border: 1px solid var(--field); border-radius: 10px; padding: 10px 14px; color: var(--ink); background: var(--surface); }
+input { min-width: 0; }
+input::placeholder { color: var(--muted); opacity: 1; }
+input[type='checkbox'] { accent-color: var(--accent); }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+h1 { margin: 0; font-size: clamp(28px, 4vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -.02em; }
+h2 { font-size: 20px; font-weight: 600; }
+p { margin: 0; }
+.skip-link { position: absolute; left: 12px; top: -80px; z-index: 10; padding: 12px 18px; border-radius: 10px; background: var(--focus); color: var(--on-focus); font-weight: 600; text-decoration: none; }
+.skip-link:focus { top: 12px; }
+.app-header { border-bottom: 1px solid var(--line); }
+.header-inner { max-width: calc(var(--content-width) + 2 * max(16px, 3%)); margin: 0 auto; padding: 6px max(16px, 3%); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 20px; }
+.brand { display: flex; gap: 10px; align-items: center; min-height: 44px; color: var(--ink); text-decoration: none; font-size: 15px; font-weight: 600; }
+.brand svg { color: var(--accent); flex-shrink: 0; }
+.main-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 0 18px; font-size: 14px; }
+.main-nav a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; padding: 12px 0; color: var(--muted); text-decoration: none; }
+.main-nav a[aria-current='page'] { color: var(--ink); font-weight: 600; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; }
+.main-nav { margin-left: auto; }
+.theme-toggle { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; min-height: 44px; padding: 0; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: var(--muted); }
+.theme-toggle:hover { color: var(--ink); border-color: var(--field); }
+@media (max-width: 600px) {
+  /* Phone: the toggle stays in the top-right corner beside the brand, and the navigation wraps to its own row. */
+  .theme-toggle { order: 2; margin-left: auto; }
+  .main-nav { order: 3; flex-basis: 100%; margin-left: 0; }
+}
+.sample-badge { font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: var(--badge-bg); color: var(--badge-ink); }
+.app-main { max-width: calc(var(--content-width) + 2 * max(16px, 3%)); margin: 0 auto; padding: 36px max(16px, 3%) 72px; }
+.page-heading { display: flex; flex-direction: column; gap: 12px; }
+.page-heading p { color: var(--muted); font-size: 14px; }
+.basis-tag { display: inline-block; width: fit-content; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 6px; }
+.basis-tag--stated { background: var(--stated-bg); color: var(--stated-ink); border: 1px solid var(--stated-line); }
+.basis-tag--inferred { color: var(--inf-ink); border: 1px dashed var(--inf-line); }
+.coverage-notice { padding: 20px 22px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); color: var(--muted); font-size: 14px; }
+.coverage-notice h2 { color: var(--ink); font-size: 15px; margin-top: 0; }
+.evidence-passage { font-size: 14px; }
+.evidence-passage summary { padding: 12px 0; color: var(--link); font-weight: 500; }
+.evidence-passage blockquote { margin: 8px 0 6px; padding: 10px 14px; border-left: 3px solid var(--accent); background: var(--surface); color: var(--body); }
+@media (max-width: 600px) {
+  button, select, summary, .tap-target { min-height: 44px; min-width: 44px; }
+  a.tap-target { display: inline-flex; align-items: center; }
+}
+
+/* Home and search use the signed-off 760px header column. */
+.header-inner--narrow { --content-width: 760px; }

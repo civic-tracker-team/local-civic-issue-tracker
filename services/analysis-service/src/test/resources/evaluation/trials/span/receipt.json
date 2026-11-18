@@ -1,0 +1,13 @@
+{
+  "contractRevision": "grounded-findings-3",
+  "state": "SUCCESS",
+  "promptTokens": 31,
+  "sampling": {
+    "temperature": 0.2,
+    "topP": 0.95,
+    "topK": 40,
+    "minP": 0.05,
+    "presencePenalty": 0,
+    "repeatPenalty": 1
+  }
+}

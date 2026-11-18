@@ -1,0 +1,55 @@
+{
+  "name": "Earlier recorded action",
+  "source": {
+    "unit": "EX5",
+    "lines": [
+      {
+        "number": 90009,
+        "text": "On March 3, 2025, Riverton's council adopted Resolution No. 2025-14 establishing the Maple Creek maintenance program."
+      }
+    ]
+  },
+  "reply": {
+    "issues": [
+      {
+        "id": "i1",
+        "matterType": "PROGRAM",
+        "name": "Maple Creek maintenance program",
+        "priorIssueId": null
+      }
+    ],
+    "developments": [
+      {
+        "evidence": [
+          {
+            "firstLine": 90009,
+            "lastLine": 90009
+          }
+        ],
+        "finding": {
+          "kind": "EARLIER_ACTION",
+          "actedBy": "CITY_COUNCIL",
+          "occurred": {
+            "precision": "DAY",
+            "value": "2025-03-03",
+            "approximate": false
+          },
+          "planned": []
+        },
+        "does": "adopt Resolution No. 2025-14 establishing the Maple Creek maintenance program",
+        "links": [
+          {
+            "issueId": "i1",
+            "basis": "SOURCE_STATED",
+            "evidence": [
+              {
+                "firstLine": 90009,
+                "lastLine": 90009
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

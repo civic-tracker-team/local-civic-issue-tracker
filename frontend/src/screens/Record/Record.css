@@ -1,0 +1,27 @@
+.record-screen { margin-top:-4px; display:flex; flex-direction:column; gap:24px; }
+.record-screen .record-heading { display:flex; flex-direction:column; gap:10px; }
+.record-screen .record-meeting { align-self:flex-start; font-size:14px; }
+.record-screen h1 { font-size:clamp(26px, 3.6vw, 34px); line-height:1.2; }
+.record-screen dl { margin:0; display:flex; flex-wrap:wrap; gap:4px 22px; font-size:14px; color:var(--muted); }
+.record-screen dl > div { display:flex; gap:6px; }
+.record-screen dd { margin:0; color:var(--ink); }
+.record-screen .record-controls { display:flex; flex-wrap:wrap; gap:8px; margin-top:4px; }
+.record-screen .record-controls button { min-height:44px; padding:0 16px; border:1px solid var(--line); border-radius:10px; }
+.record-screen .record-controls .record-original { display:inline-flex; align-items:center; min-height:44px; padding:0 18px; border:0; border-radius:10px; background:var(--accent); color:var(--on-accent); text-decoration:none; font-weight:600; }
+.record-screen button:disabled { cursor:default; }
+.record-screen .record-original-note { font-size:13px; color:var(--muted); }
+.record-screen .record-version { padding:12px 14px; border-radius:10px; background:var(--note); font-size:14px; color:var(--body); }
+.record-screen .record-text { padding:clamp(18px, 4%, 36px); background:var(--surface); border:1px solid var(--line); border-radius:14px; display:flex; flex-direction:column; gap:22px; font-size:16px; line-height:1.7; color:var(--body); }
+.record-screen .record-block { display:flex; flex-direction:column; gap:22px; }
+.record-screen .record-page { font-size:13px; color:var(--muted); }
+.record-screen .record-text section { display:flex; flex-direction:column; gap:10px; scroll-margin:20px; }
+.record-screen .record-text h2 { margin:0; font-size:16px; font-weight:600; color:var(--ink); }
+.record-screen mark { background:var(--mark); color:var(--ink); padding:1px 2px; border-radius:3px; box-shadow:inset 0 -2px 0 var(--accent); }
+.record-screen mark.record-highlight--inferred { box-shadow:inset 0 -2px 0 var(--inf-line); }
+.record-screen sup { margin-left:2px; font-size:11px; font-weight:700; color:var(--link); }
+.record-screen .record-connection { display:flex; flex-wrap:wrap; align-items:center; gap:6px 14px; padding:10px 12px; border-radius:10px; background:var(--bg); border:1px solid var(--line); font-size:14px; line-height:1.45; }
+.record-screen .record-connection--inferred { border:1px dashed var(--inf-line); }
+.record-screen .record-marker { font-weight:700; color:var(--link); }
+.record-screen .record-connection a { color:var(--ink); font-weight:600; }
+
+@media (max-width:600px) { .record-screen h1 { font-size:28px; } }

@@ -1,0 +1,187 @@
+{
+  "v": 3,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-13T17:30:00Z"
+  },
+  "title": "Civic Tracker Screen Designs",
+  "launch": {
+    "view": "canvas"
+  },
+  "pages": [],
+  "boards": {
+    "Home1a.dc.html": {
+      "x": 0,
+      "y": 1400,
+      "w": 1280,
+      "h": 1680,
+      "title": "1a · Ledger (after Memos) · desktop, light",
+      "expand": "fill"
+    },
+    "Home1a_phone.dc.html": {
+      "x": 0,
+      "y": 3200,
+      "w": 390,
+      "h": 2500,
+      "title": "1a · phone, dark"
+    },
+    "Search2a.dc.html": {
+      "x": 0,
+      "y": 6380,
+      "w": 1280,
+      "h": 1640,
+      "title": "2a · Ledger · desktop, light",
+      "expand": "fill"
+    },
+    "Search2a_phone.dc.html": {
+      "x": 0,
+      "y": 8200,
+      "w": 390,
+      "h": 2460,
+      "title": "2a · phone, dark"
+    },
+    "Issue3a.dc.html": {
+      "x": 0,
+      "y": 11340,
+      "w": 1280,
+      "h": 2420,
+      "title": "3a · Ledger · desktop, light",
+      "expand": "fill"
+    },
+    "Issue3a_phone.dc.html": {
+      "x": 0,
+      "y": 13880,
+      "w": 390,
+      "h": 3700,
+      "title": "3a · phone, dark"
+    },
+    "Meeting4a.dc.html": {
+      "x": 0,
+      "y": 18260,
+      "w": 1280,
+      "h": 1680,
+      "title": "4a · Ledger · desktop, light",
+      "expand": "fill"
+    },
+    "Meeting4a_phone.dc.html": {
+      "x": 0,
+      "y": 20180,
+      "w": 390,
+      "h": 2480,
+      "title": "4a · phone, dark"
+    },
+    "Record5a.dc.html": {
+      "x": 0,
+      "y": 23340,
+      "w": 1280,
+      "h": 1160,
+      "title": "5a · Ledger · desktop, light",
+      "expand": "fill"
+    },
+    "Record5a_phone.dc.html": {
+      "x": 0,
+      "y": 25260,
+      "w": 390,
+      "h": 1920,
+      "title": "5a · phone, dark"
+    },
+    "Issues6a.dc.html": {
+      "x": 0,
+      "y": 27940,
+      "w": 1280,
+      "h": 1360,
+      "title": "6a · Ledger · desktop, light",
+      "expand": "fill"
+    },
+    "Issues6a_phone.dc.html": {
+      "x": 0,
+      "y": 29760,
+      "w": 390,
+      "h": 2000,
+      "title": "6a · phone, dark"
+    },
+    "Meetings7a.dc.html": {
+      "x": 0,
+      "y": 32440,
+      "w": 1280,
+      "h": 1180,
+      "title": "7a · Ledger · desktop, light",
+      "expand": "fill"
+    },
+    "Meetings7a_phone.dc.html": {
+      "x": 0,
+      "y": 34260,
+      "w": 390,
+      "h": 1740,
+      "title": "7a · phone, dark"
+    }
+  },
+  "order": [
+    "Home1a.dc.html",
+    "Home1a_phone.dc.html",
+    "Search2a.dc.html",
+    "Search2a_phone.dc.html",
+    "Issue3a.dc.html",
+    "Issue3a_phone.dc.html",
+    "Meeting4a.dc.html",
+    "Meeting4a_phone.dc.html",
+    "Record5a.dc.html",
+    "Record5a_phone.dc.html",
+    "Issues6a.dc.html",
+    "Issues6a_phone.dc.html",
+    "Meetings7a.dc.html",
+    "Meetings7a_phone.dc.html"
+  ],
+  "notes": {
+    "screen1": {
+      "x": 0,
+      "y": 1100,
+      "text": "1 · Home / search landing — desktop (light) above, phone (dark) below",
+      "kind": "title1",
+      "maxW": 6720
+    },
+    "screen2": {
+      "x": 0,
+      "y": 6080,
+      "text": "2 · Search results — query “parking downtown”",
+      "kind": "title1",
+      "maxW": 6720
+    },
+    "screen3": {
+      "x": 0,
+      "y": 11040,
+      "text": "3 · Issue timeline — “Downtown parking structure”",
+      "kind": "title1",
+      "maxW": 6720
+    },
+    "screen4": {
+      "x": 0,
+      "y": 17960,
+      "text": "4 · Meeting overview — Oct 15, 2026 regular meeting",
+      "kind": "title1",
+      "maxW": 6720
+    },
+    "screen5": {
+      "x": 0,
+      "y": 23040,
+      "text": "5 · Record / source view — Oct 15, 2026 minutes with evidence passages",
+      "kind": "title1",
+      "maxW": 6720
+    },
+    "screen6": {
+      "x": 0,
+      "y": 27640,
+      "text": "6 · Browse issues — 48 issues",
+      "kind": "title1",
+      "maxW": 6720
+    },
+    "screen7": {
+      "x": 0,
+      "y": 32140,
+      "text": "7 · Browse meetings — 92 scheduled (90 held, 2 cancelled), 2023–2026",
+      "kind": "title1",
+      "maxW": 6720
+    }
+  },
+  "designSystems": []
+}
