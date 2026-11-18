@@ -2,4 +2,4 @@
 
 Questions the screen designs raised that are not settled yet. Write your answer under **Answer:**. Answered questions move to `DECISIONS.md` beside this file.
 
-No questions are open. Questions 1 to 9 are answered in `DECISIONS.md`.
+No questions are open. Questions 1 to 10 are answered in `DECISIONS.md`.
