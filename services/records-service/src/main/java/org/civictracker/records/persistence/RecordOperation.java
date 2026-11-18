@@ -25,6 +25,9 @@ public class RecordOperation extends AssignedEntity {
   public UUID attemptId;
   public UUID workerId;
   public UUID replacesId;
+  public UUID blockedExecutionId;
+  public UUID preparingVersionId;
+  public Integer preparingUnitOrdinal;
   public String errorCode;
   public int attempts;
 }

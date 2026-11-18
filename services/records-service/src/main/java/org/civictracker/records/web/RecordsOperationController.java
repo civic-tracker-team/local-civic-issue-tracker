@@ -4,6 +4,8 @@ import java.net.URI;
 import java.util.Map;
 import java.util.UUID;
 import org.civictracker.records.api.OperationViews;
+import org.civictracker.records.application.PreparedContentReads;
+import org.civictracker.records.application.RecordPreparation;
 import org.civictracker.records.application.RecordsOperations;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
@@ -21,9 +23,28 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/internal/v1")
 public class RecordsOperationController {
   private final RecordsOperations operations;
+  private final RecordPreparation preparation;
+  private final PreparedContentReads content;
 
-  public RecordsOperationController(RecordsOperations operations) {
+  public RecordsOperationController(
+      RecordsOperations operations, RecordPreparation preparation, PreparedContentReads content) {
     this.operations = operations;
+    this.preparation = preparation;
+    this.content = content;
+  }
+
+  @PostMapping(value = "/preparation-operations", consumes = "application/json")
+  public ResponseEntity<OperationViews.Status> prepare(
+      @RequestBody OperationViews.PreparationCommand command) {
+    return accepted(preparation.accept(command));
+  }
+
+  @GetMapping("/operations/{id}/preparations")
+  public OperationViews.Page<OperationViews.PreparationResult> preparations(
+      @PathVariable UUID id,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    return content.results(id, page, size);
   }
 
   @GetMapping("/csrf")

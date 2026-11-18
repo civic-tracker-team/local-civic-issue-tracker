@@ -41,7 +41,8 @@ try {
     $created = $true
     $ready = $false
     for ($attempt = 0; $attempt -lt 60; $attempt++) {
-        & docker exec $container pg_isready -U postgres *> $null
+        # TCP, not the socket: the image's temporary init server listens only on the socket.
+        & docker exec $container psql -h 127.0.0.1 -U postgres -d lcit_records_test -tAc 'SELECT 1' *> $null
         if ($LASTEXITCODE -eq 0) { $ready = $true; break }
         Start-Sleep -Milliseconds 500
     }

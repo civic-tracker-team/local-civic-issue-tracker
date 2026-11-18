@@ -125,7 +125,7 @@ public class RecordsOperations {
         command.replacesOperationId());
   }
 
-  private OperationViews.Status accept(UUID id, Kind kind, String input, UUID replaces) {
+  OperationViews.Status accept(UUID id, Kind kind, String input, UUID replaces) {
     return transactions.execute(status -> {
       lockSlot();
       RecordOperation prior = entities.find(RecordOperation.class, id);
@@ -156,6 +156,23 @@ public class RecordsOperations {
           var before = json.readValue(old.inputJson, Acquisition.class);
           var after = json.readValue(input, Acquisition.class);
           if (!before.meetingId().equals(after.meetingId())
+              || !Objects.equals(before.runId(), after.runId())) {
+            throw new OperationProblem(409, "REPLACEMENT_WORK_CONFLICT");
+          }
+        }
+        if (kind == Kind.PREPARATION) {
+          var before =
+              json.readValue(
+                  old.inputJson, org.civictracker.records.domain.PreparationData.Selection.class);
+          var after =
+              json.readValue(
+                  input, org.civictracker.records.domain.PreparationData.Selection.class);
+          var oldAcquisition =
+              json.readValue(
+                  required(before.acquisitionOperationId()).inputJson, Acquisition.class);
+          var newAcquisition =
+              json.readValue(required(after.acquisitionOperationId()).inputJson, Acquisition.class);
+          if (!oldAcquisition.meetingId().equals(newAcquisition.meetingId())
               || !Objects.equals(before.runId(), after.runId())) {
             throw new OperationProblem(409, "REPLACEMENT_WORK_CONFLICT");
           }
@@ -253,10 +270,28 @@ public class RecordsOperations {
     });
   }
 
+  public void park(UUID id, UUID attempt, UUID execution) {
+    transactions.executeWithoutResult(status -> {
+      guard(id, attempt);
+      RecordOperation operation = required(id);
+      operation.blockedExecutionId = execution;
+      note(id, "OCR_EXECUTION_UNRESOLVED");
+      event(operation, "OCR_EXECUTION_UNRESOLVED");
+    });
+  }
+
   public OperationViews.Status resume(UUID id, OperationViews.Resume confirmation) {
     return transactions.execute(status -> {
       lockSlot();
       RecordOperation operation = required(id);
+      if (operation.kind == Kind.PREPARATION && operation.blockedExecutionId == null) {
+        operation.blockedExecutionId = unresolvedOcr(id);
+      }
+      if (operation.blockedExecutionId != null
+          && (!operation.blockedExecutionId.equals(confirmation.ocrExecutionId())
+              || !confirmation.previousOcrStopped())) {
+        throw new OperationProblem(409, "OCR_RECONCILIATION_REQUIRED");
+      }
       if ((operation.state != State.RUNNING && operation.state != State.FAILED)
           || !confirmation.previousWorkerStopped()
           || !Objects.equals(confirmation.attemptId(), operation.attemptId)
@@ -272,6 +307,17 @@ public class RecordsOperations {
         throw new OperationProblem(409, "ANOTHER_OPERATION_ACTIVE");
       }
       operation.state = State.ACCEPTED;
+      if (operation.blockedExecutionId != null) {
+        jdbc.update(
+            "update records.preparation_ocr set state='STOP_CONFIRMED' "
+                + "where id=? and state='STARTED'",
+            operation.blockedExecutionId);
+        operation.blockedExecutionId = null;
+        jdbc.update(
+            "delete from records.operation_note where operation_id=? "
+                + "and code='OCR_EXECUTION_UNRESOLVED'",
+            id);
+      }
       operation.completedAt = null;
       operation.errorCode = null;
       event(operation, "MAINTAINER_CONFIRMED_PREVIOUS_WORKER_STOPPED");
@@ -415,7 +461,11 @@ public class RecordsOperations {
             ? null
             : "/internal/v1/operations/"
                 + operation.id
-                + (operation.kind == Kind.DISCOVERY ? "/meetings" : "/originals");
+                + switch (operation.kind) {
+                  case DISCOVERY -> "/meetings";
+                  case ACQUISITION -> "/originals";
+                  case PREPARATION -> "/preparations";
+                };
     return new OperationViews.Status(
         operation.id,
         operation.kind,
@@ -429,11 +479,28 @@ public class RecordsOperations {
         operation.errorCode,
         operation.replacesId,
         result,
-        notes);
+        notes,
+        operation.blockedExecutionId == null && operation.kind == Kind.PREPARATION
+            ? unresolvedOcr(operation.id)
+            : operation.blockedExecutionId,
+        operation.preparingVersionId == null
+            ? null
+            : new OperationViews.PreparationProgress(
+                operation.preparingVersionId, operation.preparingUnitOrdinal));
   }
 
   private void lockSlot() {
     jdbc.queryForList("select id from records.operation_slot where id=1 for update");
+  }
+
+  private UUID unresolvedOcr(UUID operationId) {
+    var executions =
+        jdbc.queryForList(
+            "select id from records.preparation_ocr where operation_id=? "
+                + "and state='STARTED' order by id limit 1",
+            UUID.class,
+            operationId);
+    return executions.isEmpty() ? null : executions.getFirst();
   }
 
   private void event(RecordOperation operation, String detail) {

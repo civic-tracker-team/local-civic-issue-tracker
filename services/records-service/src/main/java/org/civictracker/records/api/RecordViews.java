@@ -45,10 +45,12 @@ public final class RecordViews {
       String originalFilename,
       Instant firstObservedAt,
       List<String> sourceUrls,
-      List<Observation> observations) {
+      List<Observation> observations,
+      List<UUID> preparationIds) {
     public Version {
       sourceUrls = List.copyOf(sourceUrls);
       observations = List.copyOf(observations);
+      preparationIds = List.copyOf(preparationIds);
     }
   }
 

@@ -1,58 +1,48 @@
 # Development setup
 
-## Repository layout
+The Java backend uses Java 25, Spring Boot 4.1.2 and Maven 3.10.0. Each service is a separate Maven module and executable JAR. The OCR service has its own Python environment.
 
-| Location | Purpose |
-|---|---|
-| `pom.xml` | Shared Java parent and four-service Maven aggregator |
-| `services/records-service/` | Record discovery, acquisition, preparation and source ownership |
-| `services/search-service/` | Published issue, record and meeting search |
-| `services/analysis-service/` | Evidence, developments, issues, linking and derived results |
-| `services/pipeline-coordinator-service/` | Processing progression and recovery coordination |
-| `services/ocr-service/` | Python OCR wrapper |
-| `frontend/` | React, TypeScript and Vite frontend |
-| `infra/` | Future local launch, model-serving and API-routing configuration |
-| `docs/engineering/` | Maintained SRS, SPMP and ADRs |
+## Build and test
 
-The four Java modules contain independently runnable Spring Boot web applications and real-server startup tests. Records also has PostgreSQL-backed persistence and original-file storage through its application layer. Domain HTTP endpoints, portal acquisition, processing, OCR/model invocation and frontend scripts remain unimplemented.
-
-## Java build
-
-Use JDK 25, Spring Boot 4.1.2 and Maven 3.10.0. The root POM inherits Spring Boot's managed defaults and aggregates four Java modules. Each child declares the MVC starter, test starter and executable packaging plugin. The artifact version `0.1.0-SNAPSHOT` is code build metadata, independent of engineering-document versions.
-
-With Maven available and `JAVA_HOME` configured for JDK 25:
-
-```sh
-mvn --version
-mvn clean verify
-```
-
-`verify` compiles the modules, runs their tests and packages executable JARs. Records tests require a dedicated PostgreSQL database, separate migration/runtime credentials and a configured test storage root. With Docker running, the PowerShell helper provisions an isolated database, runs the full build and removes its own container:
+Set `JAVA_HOME` to JDK 25 and make Maven available. With Docker running, the verification script creates a temporary PostgreSQL database and runs the complete Java build:
 
 ```powershell
 ./tools/verify-java.ps1
 ```
 
-The helper accepts `-MavenCommand` and `-MavenRepository` overrides. Its synthetic storage fixtures remain in ignored `.local/testing/`. The [records setup](RECORDS_PERSISTENCE.md) describes manual configuration. Database checks are not replaced with H2 or silently skipped. Each service also has a real-server startup test. There is no Maven Wrapper yet.
+The script accepts `-MavenCommand` and `-MavenRepository` when Maven or its cache is in a different location. It removes its test container afterward. Synthetic file fixtures stay in ignored local storage.
 
-Run a packaged service after the build:
+For a manually configured test database, run:
+
+```sh
+mvn clean verify
+```
+
+The records tests need a dedicated database, separate migration and runtime credentials, and a test storage directory. [Records persistence](RECORDS_PERSISTENCE.md) describes those settings. Tests must not target a shared development dataset.
+
+## Run the services
+
+After the build, start a service with its packaged JAR:
 
 ```sh
 java -jar services/records-service/target/records-service-0.1.0-SNAPSHOT.jar
 ```
 
-The other service JARs follow the same naming pattern. Each process receives an available port by default, which is reported in its startup log. Set `SERVER_PORT` or pass `--server.port=PORT` with an actual port number when a stable address is needed. Run the four processes in separate terminals or IntelliJ run configurations. Maven aggregation does not start them together. Stop each process when its local check is complete.
+The other Java modules use the same naming pattern. An available port is selected by default and reported at startup. Set `SERVER_PORT` when a fixed port is needed. Start each service separately through a terminal or IDE run configuration. Maven builds the modules together but does not launch them together.
 
-Records requires its configured database and storage root before startup. The other three Java services still start without a database, OCR service or model server. None exposes product routes yet. Their HTTP startup checks remain distinct from cross-service domain integration.
+Records needs its database and storage configuration before startup. Internal requests also require configured credentials. The other Java modules currently provide startup baselines rather than complete domain APIs.
 
-Open the root `pom.xml` in IntelliJ and import the Maven modules. Set the project SDK and Maven runner JDK to 25, and use Maven 3.10.0. Each service has its own application main class. Open `frontend/` in VS Code for frontend work once its package configuration is prepared. Personal IDE metadata stays out of Git.
+## Guides
 
-## Conventions
+| Guide | Contents |
+|---|---|
+| [Records persistence](RECORDS_PERSISTENCE.md) | Database roles, storage, identity and original versions |
+| [Records reads](RECORDS_READS.md) | Metadata, exact-version reads and original downloads |
+| [Records acquisition](RECORDS_ACQUISITION.md) | PrimeGov configuration, commands and recovery |
+| [Record preparation](RECORDS_PREPARATION.md) | Native extraction, OCR and prepared-content reads |
 
-Use the [Google Java Style Guide](https://google.github.io/styleguide/javaguide.html) for Java, including two-space block indentation and the guide's naming rules. The Maven group and base package are `org.civictracker`. Service packages use `records`, `search`, `analysis` and `coordinator`. Service folders and artifact IDs use lowercase hyphenated names. No formatter or enforcement plugin is added yet.
+The [design overview](../engineering/design/DESIGN_OVERVIEW.md) explains service ownership and processing. Architecture decisions are in `docs/engineering/adr/`.
 
-Do not depend on another service's implementation or JPA entities. Inter-service data access uses owner-controlled HTTP APIs with structured JSON and typed Java clients as contracts are defined. Maven aggregation controls builds; it is not runtime service discovery or a shared JVM.
+## Development conventions
 
-Keep local datasets, private notes, archived prototypes and generated results in ignored `.local/`. Keep credentials and personal configuration untracked. Original-file locations and service configuration must be supplied through configuration, arguments or environment settings.
-
-Framework references: [Spring Boot requirements](https://docs.spring.io/spring-boot/system-requirements.html), [Spring Boot Maven parent](https://docs.spring.io/spring-boot/maven-plugin/using.html), [Maven POM inheritance and aggregation](https://maven.apache.org/pom.html).
+Java follows the Google Java Style Guide and uses the `org.civictracker` namespace. Services exchange DTOs through APIs rather than sharing JPA entities. Locations and credentials come from configuration, arguments or environment variables. Personal configuration, datasets and experiment results stay outside version control.

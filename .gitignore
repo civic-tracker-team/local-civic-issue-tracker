@@ -9,6 +9,8 @@
 .venv/
 venv/
 .pytest_cache/
+**/*.egg-info/
+/services/ocr-service/build/
 
 # Personal IDE and operating-system files
 .idea/

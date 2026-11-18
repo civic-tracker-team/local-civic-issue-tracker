@@ -27,6 +27,9 @@ import tools.jackson.databind.ObjectMapper;
 /** Maps official source fields without guessing civic meaning or missing identities. */
 @Component
 public class PrimeGovParser {
+  /** Agenda items as acquisition records them; preparation must use the same rule. */
+  public static final String ITEM_SELECTOR = ".meeting-item[data-itemid]";
+
   private final ObjectMapper json;
 
   public PrimeGovParser(ObjectMapper json) {
@@ -138,7 +141,7 @@ public class PrimeGovParser {
       throw new OperationProblem(503, "INVALID_SOURCE_PACKET");
     }
     var items = new LinkedHashMap<String, Item>();
-    for (var node : html.select(".meeting-item[data-itemid]")) {
+    for (var node : html.select(ITEM_SELECTOR)) {
       String id = node.attr("data-itemid");
       if (id.isBlank()) {
         throw new OperationProblem(503, "INVALID_SOURCE_ITEM");
@@ -161,7 +164,7 @@ public class PrimeGovParser {
               .contains("/api/compilemeetingattachmenthistory/historyattachment")) {
         continue;
       }
-      var parent = anchor.closest(".meeting-item[data-itemid]");
+      var parent = anchor.closest(ITEM_SELECTOR);
       if (parent == null || history.isBlank()) {
         throw new OperationProblem(503, "INVALID_ATTACHMENT_CONTEXT");
       }
@@ -185,7 +188,7 @@ public class PrimeGovParser {
         throw new OperationProblem(503, "CONFLICTING_ATTACHMENT_REFERENCE");
       }
     }
-    for (var node : html.select(".meeting-item[data-itemid]")) {
+    for (var node : html.select(ITEM_SELECTOR)) {
       if (node.attr("data-hasattachments").equalsIgnoreCase("true")
           && node.select("a[href*=historyId]").isEmpty()) {
         throw new OperationProblem(503, "INCOMPLETE_SOURCE_PACKET");

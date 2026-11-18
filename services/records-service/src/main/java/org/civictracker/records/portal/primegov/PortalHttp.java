@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -70,7 +71,7 @@ public class PortalHttp implements DisposableBean {
                     .build());
     for (int redirects = 0; redirects <= profile.maxRedirects(); redirects++) {
       validate(profile, target);
-      pace(profile.baseUrl().getHost(), profile.requestIntervalMillis());
+      pace(profile);
       Instant observed = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
       long start = System.nanoTime();
       HttpRequest request =
@@ -85,8 +86,7 @@ public class PortalHttp implements DisposableBean {
       try (InputStream body = response.body()) {
         int status = response.statusCode();
         if (status == 429) {
-          postpone(
-              profile.baseUrl().getHost(), response.headers().firstValue("Retry-After").orElse(""));
+          postpone(profile, response.headers().firstValue("Retry-After").orElse(""));
           throw new OperationProblem(503, "SOURCE_RATE_LIMITED");
         }
         if (status >= 300 && status < 400) {
@@ -202,7 +202,8 @@ public class PortalHttp implements DisposableBean {
     }
   }
 
-  private void pace(String host, long interval) throws InterruptedException {
+  private void pace(Profile profile) throws InterruptedException {
+    String host = profile.baseUrl().getHost();
     Instant allowed =
         transactions.execute(status -> {
           jdbc.update(
@@ -214,10 +215,16 @@ public class PortalHttp implements DisposableBean {
                   "select next_allowed_at from records.portal_request_gate where host=? for update",
                   (row, n) -> row.getTimestamp(1).toInstant(),
                   host);
-          Instant next = previous.isAfter(Instant.now()) ? previous : Instant.now();
+          Instant now = Instant.now();
+          Instant next = previous.isAfter(now) ? previous : now;
+          if (Duration.between(now, next)
+                  .compareTo(Duration.ofMillis(profile.transferTimeoutMillis()))
+              > 0) {
+            throw new OperationProblem(503, "SOURCE_REQUEST_DELAY_EXCESSIVE");
+          }
           jdbc.update(
               "update records.portal_request_gate set next_allowed_at=? where host=?",
-              java.sql.Timestamp.from(next.plusMillis(interval)),
+              java.sql.Timestamp.from(next.plusMillis(profile.requestIntervalMillis())),
               host);
           return next;
         });
@@ -227,22 +234,37 @@ public class PortalHttp implements DisposableBean {
     }
   }
 
-  private void postpone(String host, String header) {
-    try {
-      Instant next;
+  private void postpone(Profile profile, String header) {
+    Instant now = Instant.now();
+    Duration delay;
+    header = header.strip();
+    if (header.matches("[0-9]+")) {
       try {
-        next = Instant.now().plusSeconds(Long.parseLong(header));
-      } catch (NumberFormatException ignored) {
-        next = ZonedDateTime.parse(header, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant();
+        delay = Duration.ofSeconds(Long.parseLong(header));
+      } catch (NumberFormatException excessive) {
+        throw new OperationProblem(503, "SOURCE_RETRY_AFTER_EXCESSIVE");
       }
-      jdbc.update(
-          "update records.portal_request_gate "
-              + "set next_allowed_at=greatest(next_allowed_at,?) where host=?",
-          java.sql.Timestamp.from(next),
-          host);
-    } catch (RuntimeException ignored) {
-      // Invalid Retry-After does not turn the failed request into success.
+    } else {
+      try {
+        delay =
+            Duration.between(
+                now, ZonedDateTime.parse(header, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant());
+      } catch (DateTimeParseException ignored) {
+        // An invalid header does not turn the failed request into success.
+        return;
+      }
     }
+    if (delay.compareTo(Duration.ofMillis(profile.transferTimeoutMillis())) > 0) {
+      throw new OperationProblem(503, "SOURCE_RETRY_AFTER_EXCESSIVE");
+    }
+    if (delay.isNegative()) {
+      return;
+    }
+    jdbc.update(
+        "update records.portal_request_gate "
+            + "set next_allowed_at=greatest(next_allowed_at,?) where host=?",
+        java.sql.Timestamp.from(now.plus(delay)),
+        profile.baseUrl().getHost());
   }
 
   @Override

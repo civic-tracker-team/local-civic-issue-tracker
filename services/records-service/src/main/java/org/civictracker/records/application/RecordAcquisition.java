@@ -8,7 +8,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
 import org.civictracker.records.domain.AcquisitionData.Acquisition;
@@ -18,6 +17,7 @@ import org.civictracker.records.domain.AcquisitionData.Meeting;
 import org.civictracker.records.domain.AcquisitionData.Packet;
 import org.civictracker.records.domain.AcquisitionData.Selection;
 import org.civictracker.records.domain.AcquisitionData.Target;
+import org.civictracker.records.domain.Hashes;
 import org.civictracker.records.domain.SourceInput;
 import org.civictracker.records.persistence.AcquisitionItem;
 import org.civictracker.records.persistence.RecordOperation;
@@ -198,14 +198,7 @@ public class RecordAcquisition {
   }
 
   private static String hash(String value) {
-    try {
-      return HexFormat.of()
-          .formatHex(
-              java.security.MessageDigest.getInstance("SHA-256")
-                  .digest(value.getBytes(StandardCharsets.UTF_8)));
-    } catch (java.security.NoSuchAlgorithmException error) {
-      throw new IllegalStateException(error);
-    }
+    return Hashes.sha256(value.getBytes(StandardCharsets.UTF_8));
   }
 
   private static void validatePdf(Path file) throws IOException {
