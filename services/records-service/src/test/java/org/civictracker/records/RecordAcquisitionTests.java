@@ -709,7 +709,7 @@ class RecordAcquisitionTests {
             Boolean.class));
   }
 
-  @Test
+  @org.junit.jupiter.api.RepeatedTest(5)
   void anOrdinarySavedGateStillDelaysTheNextRequest() throws Exception {
     Instant allowed =
         Instant.now().plusMillis(100).truncatedTo(java.time.temporal.ChronoUnit.MICROS);

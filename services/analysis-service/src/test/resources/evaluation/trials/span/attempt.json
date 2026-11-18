@@ -1,0 +1,8 @@
+{
+  "content": "{\"issues\": [{\"id\": \"i1\", \"matterType\": \"PROJECT\", \"name\": \"Bridge study\", \"priorIssueId\": null}], \"developments\": [{\"evidence\": [{\"unit\": \"U1\", \"firstLine\": 1, \"lastLine\": 1}], \"finding\": {\"kind\": \"ACTION\", \"actedBy\": \"CITY_COUNCIL\", \"planned\": []}, \"does\": \"direct a bridge study\", \"links\": [{\"issueId\": \"i1\", \"basis\": \"SOURCE_STATED\", \"evidence\": [{\"unit\": \"U1\", \"firstLine\": 1, \"lastLine\": 1}]}]}]}",
+  "receipt": {
+    "response": {
+      "tokens_predicted": 12
+    }
+  }
+}

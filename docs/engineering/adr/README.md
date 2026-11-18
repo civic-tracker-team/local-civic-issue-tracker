@@ -42,6 +42,9 @@ Records name the requirements version they use. Later records can refine an earl
 | ADR-0035 | Use a pinned local PP-OCRv6 medium runtime | 2026-11-13 |
 | ADR-0036 | Retain immutable prepared text with exact source locations | 2026-11-13 |
 | ADR-0037 | Keep OCR synchronous with caller-owned recovery | 2026-11-13 |
+| ADR-0038 | Evaluate whole meetings before adopting model inference | 2026-11-17 |
+| ADR-0039 | Resolve model-selected source ranges in analysis | 2026-11-17 |
+| ADR-0040 | Freeze the host-resolved findings contract for T06 | 2026-11-17 |
 | ADR-0042 | Style the frontend with plain CSS and design tokens | 2026-11-15 |
 | ADR-0043 | Use TanStack Router with typed, code-defined routes | 2026-11-15 |
 | ADR-0044 | Read screen data through a typed API-client layer, starting with sample data | 2026-11-15 |

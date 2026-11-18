@@ -1,0 +1,17 @@
+{
+  "type": "object",
+  "properties": {
+    "developments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "evidence": {},
+          "finding": {},
+          "does": {},
+          "links": {}
+        }
+      }
+    }
+  }
+}

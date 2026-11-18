@@ -1,0 +1,60 @@
+{
+  "evidence": [
+    {
+      "id": "e1",
+      "source": {
+        "documentId": "00000000-0000-4000-8000-000000000001",
+        "versionId": "00000000-0000-4000-8000-000000000002",
+        "preparationId": "00000000-0000-4000-8000-000000000003",
+        "profileFingerprint": "synthetic",
+        "segmentId": "00000000-0000-4000-8000-000000000004",
+        "start": 0,
+        "end": 32,
+        "text": "Council directed a bridge study."
+      }
+    }
+  ],
+  "developments": [
+    {
+      "id": "d1",
+      "description": "Recorded action by the City Council: direct a bridge study.",
+      "status": "RECORDED",
+      "dates": [
+        {
+          "role": "OCCURRENCE",
+          "precision": "DAY",
+          "start": "2026-01-15",
+          "end": null,
+          "approximate": false
+        },
+        {
+          "role": "MEETING",
+          "precision": "DAY",
+          "start": "2026-01-15",
+          "end": null,
+          "approximate": false
+        }
+      ],
+      "evidenceIds": [
+        "e1"
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "id": "i1",
+      "label": "Bridge study",
+      "priorIssueId": null
+    }
+  ],
+  "associations": [
+    {
+      "developmentId": "d1",
+      "issueId": "i1",
+      "basis": "SOURCE_STATED",
+      "evidenceIds": [
+        "e1"
+      ]
+    }
+  ]
+}
