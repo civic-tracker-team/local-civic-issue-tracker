@@ -1,0 +1,63 @@
+name: Verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  java:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Install Maven 3.10.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=3.10.0
+          expected_sha512=908b1501bfb420bf7c8affb855534a9c407fd6099367bfb9f2f2dcb8e9799102bffb84518cde74c679bd76870247c6528683abdd620581bffa90f95d92d175aa
+          archive="apache-maven-${version}-bin.tar.gz"
+          base_url="https://archive.apache.org/dist/maven/maven-3/${version}/binaries"
+          install_dir="$(mktemp -d "$RUNNER_TEMP/maven.XXXXXX")"
+          curl --fail --silent --show-error --location \
+            "$base_url/$archive" --output "$install_dir/$archive"
+          printf '%s  %s\n' "$expected_sha512" "$install_dir/$archive" | sha512sum --check --strict
+          tar -xzf "$install_dir/$archive" -C "$install_dir"
+          echo "$install_dir/apache-maven-$version/bin" >> "$GITHUB_PATH"
+          "$install_dir/apache-maven-$version/bin/mvn" --version
+
+      - name: Check Docker
+        run: docker version
+
+      - name: Verify Java
+        run: pwsh -NoProfile -File tools/verify-java.ps1
+
+      - name: Upload failing test reports
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: java-surefire-reports
+          path: services/*/target/surefire-reports/**
+          retention-days: 7
+          if-no-files-found: ignore

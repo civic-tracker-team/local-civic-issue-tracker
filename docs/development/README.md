@@ -20,6 +20,10 @@ mvn clean verify
 
 The records tests need a dedicated database, separate migration and runtime credentials, and a test storage directory. [Records persistence](RECORDS_PERSISTENCE.md) describes those settings. Tests must not target a shared development dataset.
 
+## Continuous integration
+
+The Verify workflow runs `tools/verify-java.ps1` on pushes to `main`, pull requests targeting `main` and manual dispatch. It uses Java 25 and Maven 3.10.0 to run the same isolated PostgreSQL bootstrap and Java build as local verification. Failed runs retain Surefire reports for seven days. OCR tests and coverage reporting are not in CI yet.
+
 ## Run the services
 
 After the build, start a service with its packaged JAR:
