@@ -12,7 +12,7 @@ permissions:
 
 concurrency:
   group: verify-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   java:
@@ -36,16 +36,13 @@ jobs:
         run: |
           set -euo pipefail
           version=3.10.0
+          expected_sha512=908b1501bfb420bf7c8affb855534a9c407fd6099367bfb9f2f2dcb8e9799102bffb84518cde74c679bd76870247c6528683abdd620581bffa90f95d92d175aa
           archive="apache-maven-${version}-bin.tar.gz"
           base_url="https://archive.apache.org/dist/maven/maven-3/${version}/binaries"
           install_dir="$(mktemp -d "$RUNNER_TEMP/maven.XXXXXX")"
           curl --fail --silent --show-error --location \
             "$base_url/$archive" --output "$install_dir/$archive"
-          curl --fail --silent --show-error --location \
-            "$base_url/$archive.sha512" --output "$install_dir/$archive.sha512"
-          checksum="$(awk 'NR == 1 {print $1}' "$install_dir/$archive.sha512")"
-          [[ "$checksum" =~ ^[[:xdigit:]]{128}$ ]]
-          printf '%s  %s\n' "$checksum" "$install_dir/$archive" | sha512sum --check --strict
+          printf '%s  %s\n' "$expected_sha512" "$install_dir/$archive" | sha512sum --check --strict
           tar -xzf "$install_dir/$archive" -C "$install_dir"
           echo "$install_dir/apache-maven-$version/bin" >> "$GITHUB_PATH"
           "$install_dir/apache-maven-$version/bin/mvn" --version
