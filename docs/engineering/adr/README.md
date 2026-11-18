@@ -42,3 +42,4 @@ Records name the requirements version they use. Later records can refine an earl
 | ADR-0035 | Use a pinned local PP-OCRv6 medium runtime | 2026-11-13 |
 | ADR-0036 | Retain immutable prepared text with exact source locations | 2026-11-13 |
 | ADR-0037 | Keep OCR synchronous with caller-owned recovery | 2026-11-13 |
+| ADR-0041 | Run the local Java verification gate in CI | 2026-11-18 |
