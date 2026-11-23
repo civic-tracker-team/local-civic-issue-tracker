@@ -52,3 +52,5 @@ Records name the requirements version they use. Later records can refine an earl
 | ADR-0045 | Use npm with a committed lockfile on the current Node LTS line | 2026-11-15 |
 | ADR-0046 | Self-host the Inter font | 2026-11-15 |
 | ADR-0047 | Add a light and dark theme toggle that starts from the system setting | 2026-11-18 |
+| ADR-0048 | Save meeting analysis revisions through a durable analyze operation | 2026-11-22 |
+| ADR-0049 | Continue issues across meetings through prior-issue context, without merge or split | 2026-11-22 |

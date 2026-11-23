@@ -18,7 +18,7 @@ For a manually configured test database, run:
 mvn clean verify
 ```
 
-The records tests need a dedicated database, separate migration and runtime credentials, and a test storage directory. [Records persistence](RECORDS_PERSISTENCE.md) describes those settings. Tests must not target a shared development dataset.
+The records and analysis tests need a dedicated database, separate migration and runtime credentials, and test storage directories. [Records persistence](RECORDS_PERSISTENCE.md) and [analysis operations](ANALYSIS_OPERATIONS.md) describe those settings. Tests must not target a shared development dataset.
 
 ## Continuous integration
 
@@ -34,7 +34,7 @@ java -jar services/records-service/target/records-service-0.1.0-SNAPSHOT.jar
 
 The other Java modules use the same naming pattern. An available port is selected by default and reported at startup. Set `SERVER_PORT` when a fixed port is needed. Start each service separately through a terminal or IDE run configuration. Maven builds the modules together but does not launch them together.
 
-Records needs its database and storage configuration before startup. Internal requests also require configured credentials. The other Java modules currently provide startup baselines rather than complete domain APIs.
+Records and analysis need their database and storage configuration before startup. Internal requests also require configured credentials. Analysis provides durable processing commands and saved findings; search and the coordinator still provide startup baselines.
 
 ## Guides
 
@@ -45,6 +45,7 @@ Records needs its database and storage configuration before startup. Internal re
 | [Records acquisition](RECORDS_ACQUISITION.md) | PrimeGov configuration, commands and recovery |
 | [Record preparation](RECORDS_PREPARATION.md) | Native extraction, OCR and prepared-content reads |
 | [Model evaluation](MODEL_EVALUATION.md) | Pinned meeting inputs, local inference and reviewed association metrics |
+| [Analysis operations](ANALYSIS_OPERATIONS.md) | Saved findings, prior context, commands, imports and recovery |
 
 The [design overview](../engineering/design/DESIGN_OVERVIEW.md) explains service ownership and processing. Architecture decisions are in `docs/engineering/adr/`.
 
