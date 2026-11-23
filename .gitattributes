@@ -10,3 +10,4 @@
 *.yml text eol=lf
 *.docx binary
 *.pdf binary
+services/analysis-service/src/test/resources/import-trial/** -text
