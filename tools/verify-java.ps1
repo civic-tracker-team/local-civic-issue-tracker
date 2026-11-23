@@ -12,7 +12,9 @@ $purpose = 'lcit-records-verification'
 $outputRoot = Join-Path $repoRoot ".local/testing/$token"
 $names = @('POSTGRES_PASSWORD', 'RECORDS_DB_URL', 'RECORDS_DB_USER',
     'RECORDS_DB_PASSWORD', 'RECORDS_MIGRATION_USER', 'RECORDS_MIGRATION_PASSWORD',
-    'RECORDS_STORAGE_ROOT')
+    'RECORDS_STORAGE_ROOT', 'ANALYSIS_DB_URL', 'ANALYSIS_DB_USER',
+    'ANALYSIS_DB_PASSWORD', 'ANALYSIS_MIGRATION_USER', 'ANALYSIS_MIGRATION_PASSWORD',
+    'ANALYSIS_STORAGE_ROOT')
 $previous = @{}
 foreach ($name in $names) {
     $previous[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
@@ -34,6 +36,10 @@ try {
     $env:RECORDS_DB_PASSWORD = [Guid]::NewGuid().ToString('N')
     $env:RECORDS_MIGRATION_USER = 'lcit_records_migrator'
     $env:RECORDS_MIGRATION_PASSWORD = [Guid]::NewGuid().ToString('N')
+    $env:ANALYSIS_DB_USER = 'lcit_analysis_runtime'
+    $env:ANALYSIS_DB_PASSWORD = [Guid]::NewGuid().ToString('N')
+    $env:ANALYSIS_MIGRATION_USER = 'lcit_analysis_migrator'
+    $env:ANALYSIS_MIGRATION_PASSWORD = [Guid]::NewGuid().ToString('N')
     Invoke-DockerChecked -Arguments @('run', '-d', '--name', $container,
         '--label', "lcit.purpose=$purpose", '--env', 'POSTGRES_PASSWORD',
         '--env', 'POSTGRES_DB=lcit_records_test', '-p', '127.0.0.1::5432',
@@ -54,7 +60,13 @@ try {
         -v "migration_password=$env:RECORDS_MIGRATION_PASSWORD" `
         -v "runtime_role=$env:RECORDS_DB_USER" -v "runtime_password=$env:RECORDS_DB_PASSWORD"
     if ($LASTEXITCODE -ne 0) { throw 'Records database provisioning failed.' }
-    'CREATE SCHEMA analysis; CREATE SCHEMA coordinator; REVOKE ALL ON SCHEMA analysis,coordinator FROM PUBLIC;' |
+    $analysisBootstrap = Get-Content (Join-Path $repoRoot 'infra/postgres/analysis-bootstrap.sql') -Raw
+    $analysisBootstrap | & docker exec -i $container psql -U postgres -d lcit_records_test `
+        -v ON_ERROR_STOP=1 -v "migration_role=$env:ANALYSIS_MIGRATION_USER" `
+        -v "migration_password=$env:ANALYSIS_MIGRATION_PASSWORD" `
+        -v "runtime_role=$env:ANALYSIS_DB_USER" -v "runtime_password=$env:ANALYSIS_DB_PASSWORD"
+    if ($LASTEXITCODE -ne 0) { throw 'Analysis database provisioning failed.' }
+    'CREATE SCHEMA coordinator; REVOKE ALL ON SCHEMA coordinator FROM PUBLIC;' |
         & docker exec -i $container psql -U postgres -d lcit_records_test -v ON_ERROR_STOP=1
     if ($LASTEXITCODE -ne 0) { throw 'Permission-test schema setup failed.' }
 
@@ -62,6 +74,8 @@ try {
     $port = ($binding.Trim() -split ':')[-1]
     $env:RECORDS_DB_URL = "jdbc:postgresql://127.0.0.1:$port/lcit_records_test"
     $env:RECORDS_STORAGE_ROOT = Join-Path $outputRoot 'storage'
+    $env:ANALYSIS_DB_URL = $env:RECORDS_DB_URL
+    $env:ANALYSIS_STORAGE_ROOT = Join-Path $outputRoot 'analysis-storage'
     $mavenArguments = @('--batch-mode', '--no-transfer-progress', 'clean', 'verify')
     if ($MavenRepository) { $mavenArguments += "-Dmaven.repo.local=$MavenRepository" }
     Push-Location $repoRoot

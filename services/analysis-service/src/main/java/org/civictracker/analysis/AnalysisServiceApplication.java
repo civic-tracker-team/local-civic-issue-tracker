@@ -7,6 +7,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class AnalysisServiceApplication {
 
   public static void main(String[] args) throws Exception {
+    if (args.length > 0 && args[0].equals("import-trial")) {
+      org.civictracker.analysis.application.ImportTrialCli.main(
+          java.util.Arrays.copyOfRange(args, 1, args.length));
+      return;
+    }
     if (args.length > 0 && args[0].equals("summarize")) {
       org.civictracker.analysis.evaluation.TrialSummary.main(
           java.util.Arrays.copyOfRange(args, 1, args.length));

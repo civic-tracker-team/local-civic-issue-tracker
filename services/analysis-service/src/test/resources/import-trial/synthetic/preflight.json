@@ -1,0 +1,10 @@
+{
+  "identity": {
+    "modelSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "runtimeBuild": "synthetic",
+    "reasoning": false,
+    "properties": {
+      "model_path": "synthetic.gguf"
+    }
+  }
+}

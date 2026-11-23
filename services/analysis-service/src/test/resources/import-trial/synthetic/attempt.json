@@ -1,0 +1,6 @@
+{
+  "state": "SUCCESS",
+  "content": "{\"issues\": [{\"id\": \"i1\", \"matterType\": \"PROJECT\", \"name\": \"Elm bridge repair\", \"priorIssueId\": null}], \"developments\": [{\"evidence\": [{\"firstLine\": 1, \"lastLine\": 1}], \"finding\": {\"kind\": \"PROPOSAL\", \"proposedBy\": \"STAFF\", \"planned\": []}, \"does\": \"repair the Elm bridge\", \"links\": [{\"issueId\": \"i1\", \"basis\": \"SOURCE_STATED\", \"evidence\": [{\"firstLine\": 1, \"lastLine\": 1}]}]}]}",
+  "reason": "",
+  "receipt": {}
+}
