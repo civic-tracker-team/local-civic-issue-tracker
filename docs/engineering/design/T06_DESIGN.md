@@ -1,6 +1,6 @@
 # Model feasibility evaluation
 
-T06 evaluates local whole-meeting inference before the team adopts a production model or profile. Analysis owns the developer evaluation runner. Records remains authoritative for originals and immutable prepared text. The runner has no civic-domain persistence or production analysis routes.
+T06 evaluates local whole-meeting inference before the team adopts a production model or profile. Analysis owns the developer evaluation runner. Records remains authoritative for originals and immutable prepared text. The evaluator writes attempt files; T07 now wraps it with immutable findings persistence and a durable internal analyze-meeting operation.
 
 ## Frozen contract
 
@@ -83,4 +83,4 @@ These findings need human source review. Line resolution does not catch them:
 - A valid citation can fail to support its claim. Earlier trials reported superseded-motion wording as adopted and linked programs absent from the cited passage. These errors did not recur in the frozen arm, but the contract does not rule them out.
 - A `STAFF` proposer can depend on a matching staff report rather than the cited agenda lines alone.
 
-The [evaluation guide](../../development/MODEL_EVALUATION.md) describes commands and review files. [ADR-0040](../adr/ADR-0040-frozen-model-findings-contract.md) records the decision history. Production identity, persistence, chronological admission and publication remain later increments.
+The [evaluation guide](../../development/MODEL_EVALUATION.md) describes commands and review files. [ADR-0040](../adr/ADR-0040-frozen-model-findings-contract.md) records the decision history. The [analysis operations guide](../../development/ANALYSIS_OPERATIONS.md) covers saved revisions, finding kinds, prior-issue identities and internal routes. Model-quality approval, coordinator-wide chronological admission and publication remain separate work.

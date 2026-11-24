@@ -35,6 +35,8 @@ Records has its own durable operations and recovery controls. Coordinator-wide a
 
 Original files use persistent storage, while PostgreSQL holds their references, metadata and queryable content. Each service owns its schema. Consumers use the owner's API, and neither OCR nor the model runtime has application SQL access.
 
+Analysis saves immutable meeting revisions in its own schema, including finding kinds, dates, evidence, issue mentions and associations. A durable analyze-meeting operation calls the frozen evaluator and commits findings only after validation. Explicit earlier revisions provide prior-issue context. Internal reads and verified trial imports are implemented; coordinator-wide ordering and publication remain separate. The [analysis operations guide](../../development/ANALYSIS_OPERATIONS.md) describes the implemented interface.
+
 Public reads will use a publication manifest containing exact source versions and analysis revisions. The coordinator advances the published view after a bounded run succeeds. Users keep access to the previous view during processing or failure. A historical correction keeps that view until the affected later history has also been rebuilt.
 
 ## Evidence and issue history

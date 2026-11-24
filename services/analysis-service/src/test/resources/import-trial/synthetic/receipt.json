@@ -1,0 +1,20 @@
+{
+  "state": "SUCCESS",
+  "contractRevision": "grounded-findings-3",
+  "contractRevisionDetail": "unit-6c-synthetic-wording",
+  "promptTokens": 12,
+  "context": 1000,
+  "outputLimit": 100,
+  "seed": 1,
+  "sampling": {
+    "temperature": 0.2,
+    "topP": 0.95,
+    "topK": 40,
+    "minP": 0.05,
+    "presencePenalty": 0,
+    "repeatPenalty": 1
+  },
+  "inputSha256": "178199409f225afa7a912ff597aaed9733c5929d91b5e4414cca48c6431a6496",
+  "modelInputSha256": "c0c1a0e6561b005f253b6caa1b37f3f5ef67272bae0a010d4628ffd97ceb092c",
+  "candidatesSha256": "b54161e0c1221c37b69429f8005b0bdf23e214ac6077902b5eadcc05e358eff7"
+}

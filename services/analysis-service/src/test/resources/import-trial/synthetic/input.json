@@ -1,0 +1,42 @@
+{
+  "meetingId": "10000000-0000-4000-8000-000000000001",
+  "officialId": "synthetic",
+  "meetingDate": "2026-01-15",
+  "title": "Synthetic meeting",
+  "sources": [
+    {
+      "documentId": "10000000-0000-4000-8000-000000000002",
+      "versionId": "10000000-0000-4000-8000-000000000003",
+      "artifactId": "10000000-0000-4000-8000-000000000004",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "byteLength": 100,
+      "preparationId": "10000000-0000-4000-8000-000000000005",
+      "profileFingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "sourceUrls": [
+        "https://example.invalid/source"
+      ],
+      "units": [
+        {
+          "ordinal": 0,
+          "disposition": "NATIVE",
+          "nativeText": "Staff proposes the Elm bridge repair.",
+          "segments": [
+            {
+              "id": "10000000-0000-4000-8000-000000000006",
+              "text": "Staff proposes the Elm bridge repair.",
+              "method": "NATIVE",
+              "locator": {
+                "kind": "pdf",
+                "page": 1
+              },
+              "score": null,
+              "selected": true
+            }
+          ],
+          "notes": []
+        }
+      ]
+    }
+  ],
+  "priorIssues": []
+}

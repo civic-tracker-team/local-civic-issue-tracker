@@ -1,0 +1,53 @@
+{
+  "evidence": [
+    {
+      "id": "e1",
+      "source": {
+        "documentId": "10000000-0000-4000-8000-000000000002",
+        "versionId": "10000000-0000-4000-8000-000000000003",
+        "preparationId": "10000000-0000-4000-8000-000000000005",
+        "profileFingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "segmentId": "10000000-0000-4000-8000-000000000006",
+        "start": 0,
+        "end": 37,
+        "text": "Staff proposes the Elm bridge repair."
+      }
+    }
+  ],
+  "developments": [
+    {
+      "id": "d1",
+      "description": "Proposed by city staff for decision: repair the Elm bridge",
+      "status": "PROPOSED",
+      "dates": [
+        {
+          "role": "MEETING",
+          "precision": "DAY",
+          "start": "2026-01-15",
+          "end": null,
+          "approximate": false
+        }
+      ],
+      "evidenceIds": [
+        "e1"
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "id": "i1",
+      "label": "Elm bridge repair",
+      "priorIssueId": null
+    }
+  ],
+  "associations": [
+    {
+      "developmentId": "d1",
+      "issueId": "i1",
+      "basis": "SOURCE_STATED",
+      "evidenceIds": [
+        "e1"
+      ]
+    }
+  ]
+}
