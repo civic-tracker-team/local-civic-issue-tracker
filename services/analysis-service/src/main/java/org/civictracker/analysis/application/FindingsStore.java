@@ -97,6 +97,7 @@ public class FindingsStore {
       row.end = span.end();
       row.text = span.text();
       row.unitOrdinal = location.unitOrdinal();
+      row.segmentOrdinal = location.segmentOrdinal();
       row.locatorJson = EvaluationJson.MAPPER.writeValueAsString(location.locator());
       unique(evidence, candidate.id(), row.id);
       entities.persist(row);
@@ -219,13 +220,16 @@ public class FindingsStore {
       UUID versionId,
       UUID preparationId,
       int unitOrdinal,
+      int segmentOrdinal,
       Map<String, Object> locator) {}
 
   private static Map<UUID, Location> locations(MeetingInput input) {
     var result = new HashMap<UUID, Location>();
     for (var source : input.sources()) {
       for (var unit : source.units()) {
+        int segmentOrdinal = 0;
         for (var segment : unit.segments()) {
+          if (!segment.selected()) continue;
           if (result.putIfAbsent(
                   segment.id(),
                   new Location(
@@ -233,6 +237,7 @@ public class FindingsStore {
                       source.versionId(),
                       source.preparationId(),
                       unit.ordinal(),
+                      segmentOrdinal++,
                       segment.locator()))
               != null)
             throw new SaveRejected(

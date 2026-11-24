@@ -372,6 +372,7 @@ class FindingsStoreTests {
           e.end(),
           e.text(),
           e.segmentId().equals(s1) ? 7 : 0,
+          0,
           e.segmentId().equals(s1) ? pdf : html);
     }
   }

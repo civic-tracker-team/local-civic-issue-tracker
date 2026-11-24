@@ -98,6 +98,7 @@ class AnalysisHttpTests {
     assertEquals("no-store", response.headers().firstValue("cache-control").orElseThrow());
     var saved = EvaluationJson.MAPPER.readValue(response.body(), SavedFindings.class);
     assertEquals(findings.read(id), saved);
+    assertEquals(0, saved.developments().getFirst().evidence().getFirst().segmentOrdinal());
     assertEquals(
         org.civictracker.analysis.domain.FindingKind.PROPOSAL,
         saved.developments().getFirst().kind());

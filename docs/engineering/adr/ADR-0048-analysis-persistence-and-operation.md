@@ -48,6 +48,7 @@ A developer command imports an existing successful trial folder as a revision ma
   - The analysis module gains database, migration and security dependencies.
   - Uncertain model execution needs maintainer action.
   - Attempt files on disk must be kept with the database for full provenance.
+  - A maintainer can resume a blocked operation but cannot abandon it. Resume returns it to `ACCEPTED` with its original acceptance time, so it runs again next. If an input repeatedly ends in uncertain execution, it blocks the queue until someone edits the database. An abandon route that marks it `FAILED` and frees the slot is planned if time allows.
 - **Follow-ups:**
   - Coordinator run control (ADR-0051)
   - The publication manifest
@@ -55,5 +56,7 @@ A developer command imports an existing successful trial folder as a revision ma
   - Re-analysis after corrections, which is deferred with FR-25
 
 ## AI assistance and provenance
+
+The no-abandon consequence comes from the PR #7 review on November 24, 2026.
 
 Claude drafted this record and the T07 plan from the code, the existing ADRs and the agreed Release 1 re-plan. Kazim selects the decisions. No implementation or test result is claimed by this record.

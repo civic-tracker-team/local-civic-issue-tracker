@@ -35,6 +35,40 @@ class TrialImportReplayTests {
         assertEquals(
             org.civictracker.analysis.domain.FindingKind.ACTION,
             saved.developments().get(1).kind());
+        var spans = saved.developments().get(1).evidence();
+        assertEquals(27, spans.size());
+        assertTrue(spans.stream().allMatch(span -> span.unitOrdinal() == 2));
+        assertEquals(1, spans.stream().map(span -> span.versionId()).distinct().count());
+        var input =
+            org.civictracker.analysis.evaluation.EvaluationJson.MAPPER.readValue(
+                java.nio.file.Files.readString(folder.resolve("input.json")),
+                org.civictracker.analysis.domain.MeetingInput.class);
+        var source =
+            input.sources().stream()
+                .filter(s -> s.versionId().equals(spans.getFirst().versionId()))
+                .findFirst()
+                .orElseThrow();
+        var unit = source.units().stream().filter(u -> u.ordinal() == 2).findFirst().orElseThrow();
+        var selectedIds =
+            unit.segments().stream().filter(s -> s.selected()).map(s -> s.id()).toList();
+        var expected = spans.stream().map(s -> selectedIds.indexOf(s.segmentId())).toList();
+        assertTrue(expected.stream().allMatch(position -> position >= 0));
+        assertEquals(
+            java.util.stream.IntStream.range(expected.getFirst(), expected.getFirst() + 27)
+                .boxed()
+                .toList(),
+            expected);
+        assertEquals(expected, spans.stream().map(span -> span.segmentOrdinal()).toList());
+        var rawIds = unit.segments().stream().map(s -> s.id()).toList();
+        System.out.println(
+            "T07 SEGMENTS 1403 council action PASS unit=2 selected positions="
+                + expected.getFirst()
+                + ".."
+                + expected.getLast()
+                + " spans=27 raw positions="
+                + rawIds.indexOf(spans.getFirst().segmentId())
+                + ".."
+                + rawIds.indexOf(spans.getLast().segmentId()));
         System.out.println(
             "T07 KIND 1403 council action PASS kind=" + saved.developments().get(1).kind());
       }

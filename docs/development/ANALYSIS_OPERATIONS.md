@@ -72,7 +72,7 @@ The command's `selection` contains `discoveryId`, `acquisitionId`, `preparationO
 
 An accepted command returns 202, a status Location and `Cache-Control: no-store`. The same UUID and canonical command return the existing operation. Changed input under that UUID returns 409. One durable slot admits one operation at a time.
 
-Saved findings contain ordered developments, issue mentions and associations. Each development retains its reply kind (`PROPOSAL`, `ACTION`, `EARLIER_ACTION` or `UNCLEAR`), description, status, dates and exact evidence. Kind is checked against the accepted reply rather than inferred from status. Evidence retains source identities, code-point offsets, unit ordinal and locator. T08 can derive source order from the development's position and group associations by development ID.
+Saved findings contain ordered developments, issue mentions and associations. Each development retains its reply kind (`PROPOSAL`, `ACTION`, `EARLIER_ACTION` or `UNCLEAR`), description, status, dates and exact evidence. Kind is checked against the accepted reply rather than inferred from status. Evidence retains source identities, code-point offsets, `unitOrdinal`, `segmentOrdinal` and locator. `segmentOrdinal` is the zero-based position among the unit's selected segments in input order. Unselected extraction alternatives do not create gaps, and evidence cannot cite them. Two spans are adjacent lines when they share a version and unit ordinal and their segment ordinals differ by exactly one. T08 can derive development order from its list position and group associations by development ID.
 
 Prior links reuse saved issue UUIDs. Unlinked mentions create new issues. Equal-basis links resolving to the same development and issue merge with ordered unique evidence. Conflicting bases reject the whole save. A revision lists each issue once using its first mention's name; issue history retains every mention and uses the latest name across its ordered revisions.
 
@@ -89,9 +89,13 @@ Prior links reuse saved issue UUIDs. Unlinked mentions create new issues. Equal-
 
 There is no automatic retry or takeover. Restarting the service does not prove that earlier work stopped. A foreign worker's running attempt remains blocked.
 
+If the database is unavailable while the worker records an outcome, the operation stays `RUNNING` with no blocked attempt, and the log shows "Analysis worker cannot reconcile durable state". This looks like a long model call. After database access returns, restart the service to give the worker a new ID, then resume the operation with the stop confirmations below.
+
 After confirming that the previous worker stopped, a maintainer sends its `attemptId`, `previousWorkerId` and `previousWorkerStopped=true` to the resume route. A running or uncertain attempt also requires `previousRuntimeStopped=true`, after the runtime has been checked. A failed, returned attempt does not require that runtime confirmation. A mismatched attempt, an active current worker or another occupied slot returns 409.
 
 Resume returns the operation to `ACCEPTED`. Its next claim receives a new attempt ID and a new `operations/<id>/attempt-<n>/` directory. Earlier files remain unchanged. Status errors use fixed codes and correlation IDs, without exception details or rejected path text.
+
+A maintainer can resume a blocked operation but cannot abandon it. Resume preserves the original acceptance time, so that operation runs again next. If an input repeatedly ends in uncertain execution, it blocks the queue until someone edits the database. An abandon route that marks the operation `FAILED` and frees the slot is planned if time allows.
 
 ## Import a saved trial
 
@@ -104,6 +108,10 @@ java -jar services/analysis-service/target/analysis-service-0.1.0-SNAPSHOT.jar i
 It requires a `SUCCESS` receipt at `grounded-findings-3`. It checks input, model-input and candidate hashes, then reinterprets the raw reply and requires exact candidate equality. It retains `receipt.json`, `input.json`, `model-input.txt`, `candidates.json`, `attempt.json` and `preflight.json` under `imports/<input-sha256>-<candidates-sha256>/`. Only then does it save an `IMPORTED` revision and print its UUID. Repeating the same input and candidate artifacts returns that revision. The lookup, lock and storage key all use both hashes, keeping different meetings separate even when both have empty findings. The import command forces the worker off, including when service configuration enables it.
 
 Standalone imports require empty prior context because a trial alone has no saved label-to-UUID mapping. Use the operation with `priorRevisionIds` for issue continuity. The existing `evaluate CONFIG OUTPUT ADMISSION` command remains a fallback for producing trials; its output directory must be new. Importing does not start inference or publish anything.
+
+The receipt does not cover `preflight.json`, so an imported revision's profile fingerprint comes from an unverified file. Import only trial folders you produced and have not edited. The analyze operation is not affected: it writes its own preflight and checks the runtime identity against its configuration.
+
+Reimporting the same input with identical findings returns the existing revision even if the second trial used a different seed or profile. The second trial's files and fingerprint are not stored.
 
 ## Verify
 

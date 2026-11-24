@@ -85,6 +85,7 @@ CREATE TABLE analysis.evidence_span (
   segment_id uuid NOT NULL, start integer NOT NULL CHECK (start >= 0),
   "end" integer NOT NULL CHECK ("end" >= start), text text NOT NULL,
   unit_ordinal integer NOT NULL CHECK (unit_ordinal >= 0),
+  segment_ordinal integer NOT NULL CHECK (segment_ordinal >= 0),
   locator_json text NOT NULL CHECK (jsonb_typeof(locator_json::jsonb) = 'object'),
   UNIQUE (revision_id, local_label), UNIQUE (revision_id, ordinal), UNIQUE (revision_id, id)
 );

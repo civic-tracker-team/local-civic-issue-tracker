@@ -26,5 +26,6 @@ public class EvidenceSpanEntity extends AssignedEntity {
 
   public String text;
   public int unitOrdinal;
+  public int segmentOrdinal;
   public String locatorJson;
 }

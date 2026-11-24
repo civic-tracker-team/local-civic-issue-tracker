@@ -56,6 +56,7 @@ public record SavedFindings(
       int end,
       String text,
       int unitOrdinal,
+      int segmentOrdinal,
       Map<String, Object> locator) {
     public EvidenceSpan {
       locator = Collections.unmodifiableMap(new LinkedHashMap<>(locator));

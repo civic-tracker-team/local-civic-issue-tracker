@@ -45,6 +45,7 @@ public class FindingsReader {
               r.end,
               r.text,
               r.unitOrdinal,
+              r.segmentOrdinal,
               locator));
     }
     var devLinks = new HashMap<UUID, List<EvidenceSpan>>();
