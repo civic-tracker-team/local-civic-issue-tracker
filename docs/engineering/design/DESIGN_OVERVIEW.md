@@ -29,15 +29,15 @@ Native extraction is preferred when it recovers the required content. OCR handle
 
 Later meetings and runs remain pending while an earlier processing failure is unresolved. Successful analysis can still report an unknown date, unavailable outcome or unsupported connection. Those findings differ from a failure to retrieve or process a required input.
 
-Records has its own durable operations and recovery controls. Coordinator-wide admission, historical replay and publication remain planned parts of the design. A records operation is not a complete cross-service run.
+Records has its own durable operations and recovery controls. The coordinator implements bounded admission, ordered progression and cumulative publication. Historical replay remains planned. A records operation is not a complete cross-service run.
 
 ## Storage and publication
 
 Original files use persistent storage, while PostgreSQL holds their references, metadata and queryable content. Each service owns its schema. Consumers use the owner's API, and neither OCR nor the model runtime has application SQL access.
 
-Analysis saves immutable meeting revisions in its own schema, including finding kinds, dates, evidence, issue mentions and associations. A durable analyze-meeting operation calls the frozen evaluator and commits findings only after validation. Explicit earlier revisions provide prior-issue context. Internal reads and verified trial imports are implemented; coordinator-wide ordering and publication remain separate. The [analysis operations guide](../../development/ANALYSIS_OPERATIONS.md) describes the implemented interface.
+Analysis saves immutable meeting revisions in its own schema, including finding kinds, dates, evidence, issue mentions and associations. A durable analyze-meeting operation calls the frozen evaluator and commits findings only after validation. Explicit earlier revisions provide prior-issue context. Internal reads and verified trial imports are implemented. The coordinator controls cross-meeting ordering and publication. The [analysis operations guide](../../development/ANALYSIS_OPERATIONS.md) describes the implemented interface.
 
-Public reads will use a publication manifest containing exact source versions and analysis revisions. The coordinator advances the published view after a bounded run succeeds. Users keep access to the previous view during processing or failure. A historical correction keeps that view until the affected later history has also been rebuilt.
+The coordinator exposes a publication manifest containing exact source versions and analysis revisions. Release 1 consumers must enforce membership from it. The coordinator advances the published view after a bounded run succeeds. Users keep access to the previous view during processing or failure. Historical correction and rebuilding remain planned. The [coordinator guide](../../development/COORDINATOR_RUNS.md) describes run control and publication.
 
 ## Evidence and issue history
 

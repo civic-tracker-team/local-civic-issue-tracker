@@ -14,7 +14,9 @@ $names = @('POSTGRES_PASSWORD', 'RECORDS_DB_URL', 'RECORDS_DB_USER',
     'RECORDS_DB_PASSWORD', 'RECORDS_MIGRATION_USER', 'RECORDS_MIGRATION_PASSWORD',
     'RECORDS_STORAGE_ROOT', 'ANALYSIS_DB_URL', 'ANALYSIS_DB_USER',
     'ANALYSIS_DB_PASSWORD', 'ANALYSIS_MIGRATION_USER', 'ANALYSIS_MIGRATION_PASSWORD',
-    'ANALYSIS_STORAGE_ROOT')
+    'ANALYSIS_STORAGE_ROOT', 'COORDINATOR_DB_URL', 'COORDINATOR_DB_USER',
+    'COORDINATOR_DB_PASSWORD', 'COORDINATOR_MIGRATION_USER', 'COORDINATOR_MIGRATION_PASSWORD',
+    'COORDINATOR_MAX_MEETINGS')
 $previous = @{}
 foreach ($name in $names) {
     $previous[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
@@ -40,6 +42,12 @@ try {
     $env:ANALYSIS_DB_PASSWORD = [Guid]::NewGuid().ToString('N')
     $env:ANALYSIS_MIGRATION_USER = 'lcit_analysis_migrator'
     $env:ANALYSIS_MIGRATION_PASSWORD = [Guid]::NewGuid().ToString('N')
+    $env:COORDINATOR_DB_USER = 'lcit_coordinator_runtime'
+    $env:COORDINATOR_DB_PASSWORD = [Guid]::NewGuid().ToString('N')
+    $env:COORDINATOR_MIGRATION_USER = 'lcit_coordinator_migrator'
+    $env:COORDINATOR_MIGRATION_PASSWORD = [Guid]::NewGuid().ToString('N')
+    # Synthetic test configuration, not a production run limit.
+    $env:COORDINATOR_MAX_MEETINGS = '10'
     Invoke-DockerChecked -Arguments @('run', '-d', '--name', $container,
         '--label', "lcit.purpose=$purpose", '--env', 'POSTGRES_PASSWORD',
         '--env', 'POSTGRES_DB=lcit_records_test', '-p', '127.0.0.1::5432',
@@ -66,14 +74,18 @@ try {
         -v "migration_password=$env:ANALYSIS_MIGRATION_PASSWORD" `
         -v "runtime_role=$env:ANALYSIS_DB_USER" -v "runtime_password=$env:ANALYSIS_DB_PASSWORD"
     if ($LASTEXITCODE -ne 0) { throw 'Analysis database provisioning failed.' }
-    'CREATE SCHEMA coordinator; REVOKE ALL ON SCHEMA coordinator FROM PUBLIC;' |
-        & docker exec -i $container psql -U postgres -d lcit_records_test -v ON_ERROR_STOP=1
-    if ($LASTEXITCODE -ne 0) { throw 'Permission-test schema setup failed.' }
+    $coordinatorBootstrap = Get-Content (Join-Path $repoRoot 'infra/postgres/coordinator-bootstrap.sql') -Raw
+    $coordinatorBootstrap | & docker exec -i $container psql -U postgres -d lcit_records_test `
+        -v ON_ERROR_STOP=1 -v "migration_role=$env:COORDINATOR_MIGRATION_USER" `
+        -v "migration_password=$env:COORDINATOR_MIGRATION_PASSWORD" `
+        -v "runtime_role=$env:COORDINATOR_DB_USER" -v "runtime_password=$env:COORDINATOR_DB_PASSWORD"
+    if ($LASTEXITCODE -ne 0) { throw 'Coordinator database provisioning failed.' }
 
     $binding = Invoke-DockerChecked -Arguments @('port', $container, '5432/tcp')
     $port = ($binding.Trim() -split ':')[-1]
     $env:RECORDS_DB_URL = "jdbc:postgresql://127.0.0.1:$port/lcit_records_test"
     $env:RECORDS_STORAGE_ROOT = Join-Path $outputRoot 'storage'
+    $env:COORDINATOR_DB_URL = $env:RECORDS_DB_URL
     $env:ANALYSIS_DB_URL = $env:RECORDS_DB_URL
     $env:ANALYSIS_STORAGE_ROOT = Join-Path $outputRoot 'analysis-storage'
     $mavenArguments = @('--batch-mode', '--no-transfer-progress', 'clean', 'verify')
