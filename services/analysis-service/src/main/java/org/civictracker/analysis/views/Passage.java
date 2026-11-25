@@ -4,11 +4,13 @@ import java.time.LocalDate;
 import java.util.Objects;
 import java.util.UUID;
 
-/** Exact official text supporting a statement, located in the version it was quoted from. */
+/**
+ * Exact official text supporting a statement, located in the version it was quoted from. A
+ * passage joined from adjacent lines separates them with a line break.
+ */
 public record Passage(
     UUID recordId,
     UUID versionId,
-    String recordLabel,
     UUID meetingId,
     LocalDate meetingDate,
     Location location,
@@ -22,6 +24,7 @@ public record Passage(
     Objects.requireNonNull(text);
   }
 
+  /** Where the passage starts, taken from the Records locator saved with its evidence. */
   public sealed interface Location permits PdfPage, HtmlItem {}
 
   /** A 1-based PDF page, with the printed page label when the source has one. */
@@ -31,21 +34,13 @@ public record Passage(
     }
   }
 
-  public record HtmlItem(String itemLabel) implements Location {
+  /**
+   * An HTML element. {@code itemId} and {@code sectionId} are the portal's agenda item and section
+   * identifiers when the element sits inside one; {@code path} always locates the element.
+   */
+  public record HtmlItem(String itemId, String sectionId, String path) implements Location {
     public HtmlItem {
-      Objects.requireNonNull(itemLabel);
-    }
-  }
-
-  /** Records-owned facts about where a prepared segment sits in its source version. */
-  public interface Locator {
-    Place locate(UUID versionId, UUID segmentId);
-  }
-
-  /** {@code recordLabel} may be null until the records read API exposes the portal title. */
-  public record Place(String recordLabel, Location location) {
-    public Place {
-      Objects.requireNonNull(location);
+      Objects.requireNonNull(path);
     }
   }
 }

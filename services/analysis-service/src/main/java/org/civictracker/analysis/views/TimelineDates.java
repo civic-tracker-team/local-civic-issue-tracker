@@ -5,6 +5,7 @@ import java.time.Year;
 import java.time.YearMonth;
 import java.util.Comparator;
 import org.civictracker.analysis.domain.Candidates;
+import org.civictracker.analysis.domain.SavedFindings;
 
 /**
  * Timeline date rules (ADR-0020, FR-29 to FR-32). A known OCCURRENCE date is shown; otherwise the
@@ -32,12 +33,13 @@ public final class TimelineDates {
    * order. This is a stable display order only: a month or range is not claimed to precede a day
    * inside it.
    */
-  static final Comparator<SavedFindings.Development> ORDER =
-      Comparator.<SavedFindings.Development, LocalDate>comparing(d -> earliest(displayDate(d)))
-          .thenComparing(d -> latest(displayDate(d)))
-          .thenComparing(SavedFindings.Development::meetingDate)
-          .thenComparing(SavedFindings.Development::meetingId)
-          .thenComparingInt(SavedFindings.Development::sourceOrder);
+  static final Comparator<MeetingDevelopment> ORDER =
+      Comparator.<MeetingDevelopment, LocalDate>comparing(
+              d -> earliest(displayDate(d.development())))
+          .thenComparing(d -> latest(displayDate(d.development())))
+          .thenComparing(MeetingDevelopment::meetingDate)
+          .thenComparing(MeetingDevelopment::meetingId)
+          .thenComparingInt(MeetingDevelopment::sourceOrder);
 
   static LocalDate earliest(Candidates.DateClaim date) {
     return first(date.start());

@@ -2,76 +2,115 @@ package org.civictracker.analysis.views;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import org.civictracker.analysis.domain.SavedFindings.EvidenceSpan;
 
 /**
- * Joins saved evidence spans into readable passages. Spans that continue or overlap the previous
- * span in the same segment become one passage, and a span already covered earlier is dropped.
- * Text is only ever copied from saved spans, never retyped or joined across segments.
+ * Joins saved evidence spans, in citation order, into readable passages. A span joins the
+ * passage before it when it continues or overlaps that passage's last span in the same segment,
+ * or when it starts the next line: same version and page or item ({@code unitOrdinal}), the next
+ * {@code segmentOrdinal}, from offset 0. Joined lines are separated by a line break. A span
+ * already covered earlier is dropped. Text is only ever copied from saved spans.
+ *
+ * <p>Whether the earlier line was quoted to its end cannot be checked, because spans do not
+ * carry their segment's length.
  */
 final class Passages {
   private Passages() {}
 
-  private record Run(
-      UUID documentId, UUID versionId, UUID segmentId, int start, int end, String text) {}
+  /** The part of one segment a passage covers. */
+  private record Piece(UUID segmentId, int segmentOrdinal, int start, int end) {}
 
-  static List<Passage> assemble(
-      List<SavedFindings.Span> spans, SavedFindings.Development owner, Passage.Locator locator) {
+  private static final class Run {
+    final EvidenceSpan first;
+    final List<Piece> pieces = new ArrayList<>();
+    final StringBuilder text;
+
+    Run(EvidenceSpan span) {
+      first = span;
+      pieces.add(piece(span));
+      text = new StringBuilder(span.text());
+    }
+
+    Piece last() {
+      return pieces.getLast();
+    }
+
+    boolean covers(EvidenceSpan span) {
+      return first.versionId().equals(span.versionId())
+          && pieces.stream()
+              .anyMatch(
+                  p ->
+                      p.segmentId().equals(span.segmentId())
+                          && p.start() <= span.start()
+                          && span.end() <= p.end());
+    }
+
+    /** True when the span continues or overlaps the last piece in its own segment. */
+    boolean continues(EvidenceSpan span) {
+      return first.versionId().equals(span.versionId())
+          && last().segmentId().equals(span.segmentId())
+          && span.start() >= last().start()
+          && span.start() <= last().end();
+    }
+
+    /** True when the span starts the line after the last piece, on the same page or item. */
+    boolean nextLine(EvidenceSpan span) {
+      return first.versionId().equals(span.versionId())
+          && first.unitOrdinal() == span.unitOrdinal()
+          && span.segmentOrdinal() == last().segmentOrdinal() + 1
+          && span.start() == 0;
+    }
+  }
+
+  static List<Passage> assemble(List<EvidenceSpan> spans, MeetingDevelopment owner) {
     var runs = new ArrayList<Run>();
     for (var span : spans) {
-      if (covered(runs, span)) continue;
-      var last = runs.isEmpty() ? null : runs.getLast();
-      if (last != null
-          && last.segmentId().equals(span.segmentId())
-          && last.versionId().equals(span.versionId())
-          && span.start() >= last.start()
-          && span.start() <= last.end()) {
-        String tail = suffix(span.text(), last.end() - span.start());
-        runs.set(
-            runs.size() - 1,
-            new Run(
-                last.documentId(),
-                last.versionId(),
-                last.segmentId(),
-                last.start(),
-                span.end(),
-                last.text() + tail));
-      } else
-        runs.add(
-            new Run(
-                span.documentId(),
-                span.versionId(),
-                span.segmentId(),
-                span.start(),
-                span.end(),
-                span.text()));
+      if (runs.stream().anyMatch(run -> run.covers(span))) continue;
+      var run = runs.isEmpty() ? null : runs.getLast();
+      if (run != null && run.continues(span)) {
+        var last = run.last();
+        run.text.append(suffix(span.text(), last.end() - span.start()));
+        run.pieces.set(
+            run.pieces.size() - 1,
+            new Piece(last.segmentId(), last.segmentOrdinal(), last.start(), span.end()));
+      } else if (run != null && run.nextLine(span)) {
+        run.text.append('\n').append(span.text());
+        run.pieces.add(piece(span));
+      } else runs.add(new Run(span));
     }
     return runs.stream()
         .map(
-            run -> {
-              var place = locator.locate(run.versionId(), run.segmentId());
-              if (place == null)
-                throw new IllegalStateException("No location for segment " + run.segmentId());
-              return new Passage(
-                  run.documentId(),
-                  run.versionId(),
-                  place.recordLabel(),
-                  owner.meetingId(),
-                  owner.meetingDate(),
-                  place.location(),
-                  run.text());
-            })
+            run ->
+                new Passage(
+                    run.first.documentId(),
+                    run.first.versionId(),
+                    owner.meetingId(),
+                    owner.meetingDate(),
+                    location(run.first.locator()),
+                    run.text.toString()))
         .toList();
   }
 
-  private static boolean covered(List<Run> runs, SavedFindings.Span span) {
-    return runs.stream()
-        .anyMatch(
-            run ->
-                run.segmentId().equals(span.segmentId())
-                    && run.versionId().equals(span.versionId())
-                    && run.start() <= span.start()
-                    && span.end() <= run.end());
+  /** Reads the Records locator saved with the span; an unknown shape fails instead of guessing. */
+  static Passage.Location location(Map<String, Object> locator) {
+    var kind = locator.get("kind");
+    if ("pdf".equals(kind) && locator.get("page") instanceof Number page)
+      return new Passage.PdfPage(page.intValue(), string(locator, "pageLabel"));
+    if ("html".equals(kind) && locator.get("path") instanceof String path)
+      return new Passage.HtmlItem(string(locator, "itemId"), string(locator, "sectionId"), path);
+    throw new IllegalStateException("Unreadable evidence locator of kind " + kind);
+  }
+
+  private static String string(Map<String, Object> locator, String key) {
+    var value = locator.get(key);
+    if (value == null || value instanceof String) return (String) value;
+    throw new IllegalStateException("Locator " + key + " is not text");
+  }
+
+  private static Piece piece(EvidenceSpan span) {
+    return new Piece(span.segmentId(), span.segmentOrdinal(), span.start(), span.end());
   }
 
   /** The text after its first {@code skip} code points. */
