@@ -23,9 +23,13 @@ class PipelineCoordinatorServiceApplicationTests {
 
   @Autowired private Environment environment;
 
+  @Autowired
+  private org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping
+      mappings;
+
   @Test
   @Timeout(30)
-  void startsAnIndependentHttpServerWithoutProductRoutes() throws Exception {
+  void startsWithOnlyTheImplementedInternalRunRoutesAndNoDefaultIdentity() throws Exception {
     assertTrue(port > 0);
     assertEquals(
         "pipeline-coordinator-service", environment.getProperty("spring.application.name"));
@@ -37,7 +41,25 @@ class PipelineCoordinatorServiceApplicationTests {
     try (HttpClient client =
         HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()) {
       HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
-      assertEquals(404, response.statusCode());
+      assertEquals(401, response.statusCode());
     }
+    var paths =
+        mappings.getHandlerMethods().keySet().stream()
+            .flatMap(m -> m.getPatternValues().stream())
+            .filter(path -> path.startsWith("/internal/") || path.startsWith("/api/"))
+            .collect(java.util.stream.Collectors.toSet());
+    assertEquals(
+        java.util.Set.of(
+            "/internal/v1/runs",
+            "/internal/v1/runs/active",
+            "/internal/v1/runs/{id}",
+            "/internal/v1/runs/{id}/retry",
+            "/internal/v1/runs/{id}/abandon",
+            "/internal/v1/runs/{id}/skip",
+            "/internal/v1/runs/{id}/publish",
+            "/internal/v1/publications/current",
+            "/internal/v1/publications/{id}",
+            "/internal/v1/csrf"),
+        paths);
   }
 }
