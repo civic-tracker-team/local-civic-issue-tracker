@@ -578,6 +578,44 @@ class RunsTests {
     assertEquals(RunState.HALTED, halted.state());
     assertEquals("FACT_CONFLICT", halted.halt().code());
     assertEquals("Changed response", halted.meetings().getFirst().title());
+    // A new discovery attempt would leave saved meetings naming an operation Records never saw.
+    var refused =
+        assertThrows(
+            RunProblem.class,
+            () -> runs.retry(command.runId(), halted.halt().haltId(), "maintainer"));
+    assertEquals(409, refused.status());
+    assertEquals("RUN_NOT_RETRYABLE", refused.code());
+    assertEquals(halted, runs.view(command.runId()));
+    assertEquals(
+        RunState.ABANDONED,
+        runs.abandon(command.runId(), "Conflicting discovery", "maintainer").state());
+  }
+
+  @Test
+  void emptyDiscoveryHaltsInsteadOfPublishingCoverage() {
+    OWNERS.records.meetingCount = 0;
+    var command = command();
+    runs.start(command, "maintainer");
+    var halted = drive(command.runId(), RunState.HALTED);
+    assertEquals("EMPTY_DISCOVERY", halted.halt().code());
+    assertEquals(StepKind.DISCOVER, halted.halt().kind());
+    assertThrows(RunProblem.class, () -> runs.publish(command.runId()));
+    assertTrue(publications.current().isEmpty());
+    runs.abandon(command.runId(), "Empty synthetic range", "maintainer");
+    assertTrue(runs.active().isEmpty());
+  }
+
+  private void oneCancelledFebruaryMeeting() {
+    OWNERS.records.withoutOriginals = java.util.Set.of(id(201));
+    OWNERS.records.discovery =
+        read -> {
+          var source = new LinkedHashMap<String, Object>();
+          source.put("officialId", "F1");
+          source.put("title", "Synthetic February meeting");
+          source.put("localDate", "2026-02-02");
+          source.put("cancellationEvidence", "Cancelled");
+          return List.of(Map.of("id", id(201), "source", source));
+        };
   }
 
   @Test
@@ -781,7 +819,7 @@ class RunsTests {
     assertEquals(RunState.PUBLISHED, runs.publish(first.runId()).state());
     assertTrue(runs.active().isEmpty());
     OWNERS.reset();
-    OWNERS.records.meetingCount = 0;
+    oneCancelledFebruaryMeeting();
     var second =
         new StartRun(
             UUID.randomUUID(),
@@ -794,7 +832,11 @@ class RunsTests {
     runs.publish(second.runId());
     var next = publications.current().orElseThrow();
     assertEquals(manifest.publicationId(), next.previousPublicationId());
-    assertEquals(manifest.meetings(), next.meetings());
+    assertEquals(4, next.meetings().size());
+    assertEquals(manifest.meetings(), next.meetings().subList(0, 3));
+    assertEquals(
+        org.civictracker.coordinator.publication.Disposition.CANCELLED,
+        next.meetings().getLast().disposition());
     assertEquals(2, next.coverage().size());
   }
 
@@ -918,7 +960,7 @@ class RunsTests {
     drive(first.runId(), RunState.READY);
     runs.publish(first.runId());
     OWNERS.reset();
-    OWNERS.records.meetingCount = 0;
+    oneCancelledFebruaryMeeting();
     var next =
         new StartRun(
             UUID.randomUUID(),

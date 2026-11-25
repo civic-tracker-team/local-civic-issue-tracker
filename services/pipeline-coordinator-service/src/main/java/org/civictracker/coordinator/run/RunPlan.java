@@ -109,6 +109,10 @@ public final class RunPlan {
 
   public static List<PlannedMeeting> plan(
       StartRun command, int maxMeetings, List<DiscoveredMeeting> found) throws PlanRejected {
+    if (found.isEmpty()) {
+      // Publishing an empty discovery would mark the whole range as covered.
+      throw new PlanRejected("EMPTY_DISCOVERY");
+    }
     if (found.size() > maxMeetings) {
       throw new PlanRejected("RANGE_EXCEEDS_LIMIT");
     }

@@ -135,6 +135,10 @@ public class Runs {
         if (r.haltKind == StepKind.PUBLISH) {
           r.state = RunState.READY;
         } else if (r.haltKind == StepKind.DISCOVER) {
+          if (r.discovered) {
+            // Saved meetings and later owner commands name the current discovery attempt.
+            throw new RunProblem(409, "RUN_NOT_RETRYABLE");
+          }
           r.discoveryAttempt++;
         } else {
           var m = meeting(id, r.haltOrdinal);

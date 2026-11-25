@@ -79,6 +79,7 @@ final class CoordinatorOwners implements AutoCloseable {
     volatile boolean badPinJoin;
     volatile boolean undated;
     volatile int meetingCount = 3;
+    volatile java.util.Set<UUID> withoutOriginals = java.util.Set.of(id(102));
     volatile Consumer<Request> beforeReply = r -> {};
     volatile IntFunction<List<Map<String, Object>>> discovery = this::meetings;
 
@@ -113,6 +114,7 @@ final class CoordinatorOwners implements AutoCloseable {
       badPinJoin = false;
       undated = false;
       meetingCount = 3;
+      withoutOriginals = java.util.Set.of(id(102));
       beforeReply = r -> {};
       discovery = this::meetings;
     }
@@ -293,7 +295,7 @@ final class CoordinatorOwners implements AutoCloseable {
 
     List<Map<String, Object>> originals(Operation operation) {
       UUID meeting = UUID.fromString(operation.command.get("meetingId").stringValue());
-      if (meeting.equals(id(102))) {
+      if (withoutOriginals.contains(meeting)) {
         return List.of();
       }
       var result = new ArrayList<Map<String, Object>>();

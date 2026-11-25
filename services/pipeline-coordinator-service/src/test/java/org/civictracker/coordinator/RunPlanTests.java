@@ -53,6 +53,7 @@ class RunPlanTests {
 
   @Test
   void discoveryRejectsUndatedOutOfRangeDuplicateAndExcessMeetingsWithoutTruncating() {
+    rejected("EMPTY_DISCOVERY", List.of(), 2);
     rejected("UNDATED_MEETING", List.of(found(10, "A", null, null)), 2);
     rejected("MEETING_OUT_OF_RANGE", List.of(found(10, "A", date(1).minusDays(1), null)), 2);
     rejected("MEETING_OUT_OF_RANGE", List.of(found(10, "A", date(31).plusDays(1), null)), 2);
@@ -67,7 +68,6 @@ class RunPlanTests {
         RunPlan.plan(
             command, 2, List.of(found(10, "A", date(1), null), found(11, "B", date(31), null)));
     assertEquals(2, result.size());
-    assertTrue(RunPlan.plan(command, 1, List.of()).isEmpty());
   }
 
   @Test

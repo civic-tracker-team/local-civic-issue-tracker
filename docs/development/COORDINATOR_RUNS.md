@@ -42,7 +42,7 @@ POST `/internal/v1/runs` with:
 }
 ```
 
-The response is 202 with a Location. Repeating equivalent input under that UUID returns the existing run. Changed input returns `RUN_ID_CONFLICT`. Another active, halted or READY run returns `RUN_ACTIVE` with its ID. Committee order is normalized before fingerprinting. A range overlapping published coverage is rejected. Discovery exceeding the configured limit halts rather than truncating the range.
+The response is 202 with a Location. Repeating equivalent input under that UUID returns the existing run. Changed input returns `RUN_ID_CONFLICT`. Another active, halted or READY run returns `RUN_ACTIVE` with its ID. Committee order is normalized before fingerprinting. A range overlapping published coverage is rejected. Discovery exceeding the configured limit halts rather than truncating the range. A discovery that finds no meetings halts with `EMPTY_DISCOVERY` instead of publishing coverage for the range. Check the source and committee IDs, then retry or abandon.
 
 GET `/internal/v1/runs/{id}` or `/internal/v1/runs/active`. The view includes phase, meetings, current owner operation and status URL, halt details and waiting information. There is no active run before admission or after publication or abandon.
 
@@ -66,7 +66,7 @@ A failed owner operation or invalid result halts the run. Inspect `halt.code`, `
 | `/runs/{id}/skip` | `{"haltId": <current halt ID>, "reason": "<explanation>"}` records the maintainer and reason, marks that meeting SKIPPED and continues. |
 | `/runs/{id}/abandon` | `{"reason": "<explanation>"}` ends the run unpublished and frees admission. It does not cancel owner work. |
 
-Retry and skip are guarded by the halt ID, so repeating an already-resolved command does not apply it twice. Skip requires a halted meeting; discovery and publication halts cannot be skipped. Available pinned sources remain in a skipped entry, but it has no analysis revision and supplies no prior context. Skipping can leave gaps in later issue continuity. It is never automatic.
+Retry and skip are guarded by the halt ID, so repeating an already-resolved command does not apply it twice. Skip requires a halted meeting; discovery and publication halts cannot be skipped. A discovery halt can be retried only before its meetings are saved. After that, retry returns `RUN_NOT_RETRYABLE` because saved meetings already name the discovery operation, so abandon the run and start a new one. Available pinned sources remain in a skipped entry, but it has no analysis revision and supplies no prior context. Skipping can leave gaps in later issue continuity. It is never automatic.
 
 Some deterministic failures need correction or abandon. Records may reject a replacement of a successful preparation after a coordinator pin-join failure. A blocked analysis operation has no owner abandon route; follow its guide before starting work that needs its queue.
 

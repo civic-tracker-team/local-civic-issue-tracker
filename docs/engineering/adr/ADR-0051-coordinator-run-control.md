@@ -28,6 +28,8 @@ The coordinator's own actions are repeatable owner commands or local transaction
 
 **Resolving a halted run.** Kazim answered OQ-04 on November 24, 2026. A maintainer may retry, abandon, or skip a halted meeting with a written reason. The skip records the maintainer, appears as SKIPPED in the manifest and supplies no analysis revision to later priors. Automatic skipping remains excluded.
 
+**Empty discovery.** A discovery that finds no meetings halts instead of publishing coverage for the range, because a published range cannot be processed again until re-analysis exists.
+
 **Meetings with no retained originals** are accounted for without preparation or analysis, either as cancelled or as having no retained originals. Analysis rejects empty input.
 
 **Earlier context.** Prior revisions include analyzed meetings from the base publication and this run with strictly earlier dates. Same-day meetings do not share context.
@@ -67,4 +69,4 @@ The coordinator's own actions are repeatable owner commands or local transaction
 
 ## AI assistance and provenance
 
-Claude ran a design arena: three independent candidate designs and a cross-judge, with the synthesis recorded in the T11 planning notes. It drafted this record. Kazim accepted the decisions on November 24, 2026, including manual skip and the default-off automatic-publish toggle. Codex implemented the accepted plan and updated this record. Its status remains Proposed; automated verification is recorded separately.
+Claude ran a design arena: three independent candidate designs and a cross-judge, with the synthesis recorded in the T11 planning notes. It drafted this record. Kazim accepted the decisions on November 24, 2026, including manual skip and the default-off automatic-publish toggle. Codex implemented the accepted plan and updated this record. Its status remains Proposed; automated verification is recorded separately. During review of PR #8, Michael Avila asked for the empty-discovery halt and for refusing a discovery retry once meetings are saved. Claude implemented both.
