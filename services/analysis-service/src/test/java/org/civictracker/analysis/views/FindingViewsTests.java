@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -17,7 +16,6 @@ import org.civictracker.analysis.domain.Candidates.Precision;
 import org.civictracker.analysis.domain.Candidates.Role;
 import org.civictracker.analysis.domain.Candidates.Status;
 import org.civictracker.analysis.domain.FindingKind;
-import org.civictracker.analysis.domain.IssueHistory;
 import org.civictracker.analysis.domain.SavedFindings;
 import org.civictracker.analysis.domain.SavedFindings.Association;
 import org.civictracker.analysis.domain.SavedFindings.Development;
@@ -167,40 +165,23 @@ class FindingViewsTests {
   static final Map<UUID, String> NAMES =
       Map.of(NAV, "Navigation Center", PALM, "Palm Field property", IDLE, "Idle");
 
-  static IssueHistory.Revision mentioned(SavedFindings revision, String... names) {
-    return new IssueHistory.Revision(
-        revision.revisionId(),
-        revision.meetingId(),
-        revision.meetingDate(),
-        List.of(names),
-        List.of(),
-        List.of());
-  }
-
-  /**
-   * Each known issue's history over these revisions. Its own name is deliberately stale, as it
-   * would be when a later revision outside the publication renamed the issue.
-   */
-  static List<IssueHistory> histories(List<SavedFindings> revisions) {
-    var sorted =
-        revisions.stream().sorted(Comparator.comparing(SavedFindings::meetingDate)).toList();
-    return NAMES.keySet().stream()
-        .map(
-            issue ->
-                new IssueHistory(
-                    new Issue(issue, "Unpublished name", false),
-                    sorted.stream()
-                        .flatMap(
-                            r ->
-                                r.issues().stream()
-                                    .filter(i -> i.issueId().equals(issue))
-                                    .map(i -> mentioned(r, i.name())))
-                        .toList()))
-        .toList();
+  /** The revision with another source meeting ID and one name for every issue it mentions. */
+  static SavedFindings as(SavedFindings r, String officialId, String name) {
+    return new SavedFindings(
+        r.revisionId(),
+        r.meetingId(),
+        officialId,
+        r.meetingDate(),
+        r.title(),
+        r.contractRevision(),
+        r.profileFingerprint(),
+        r.developments(),
+        r.issues().stream().map(i -> new Issue(i.issueId(), name, i.continued())).toList(),
+        r.associations());
   }
 
   static FindingViews views(SavedFindings... revisions) {
-    return new FindingViews(List.of(revisions), histories(List.of(revisions)));
+    return new FindingViews(List.of(revisions));
   }
 
   static FindingViews views(Dev dev) {
@@ -255,6 +236,12 @@ class FindingViewsTests {
     var range = occurred(Precision.RANGE, "2025-03-01", "2025-04-30");
     assertEquals(LocalDate.parse("2025-03-01"), TimelineDates.earliest(range));
     assertEquals(LocalDate.parse("2025-04-30"), TimelineDates.latest(range));
+    var month = occurred(Precision.MONTH, "2024-02", null);
+    assertEquals(LocalDate.parse("2024-02-01"), TimelineDates.earliest(month));
+    assertEquals(LocalDate.parse("2024-02-29"), TimelineDates.latest(month));
+    var oneDay = occurred(Precision.DAY, "2024-02-10", null);
+    assertEquals(LocalDate.parse("2024-02-10"), TimelineDates.earliest(oneDay));
+    assertEquals(LocalDate.parse("2024-02-10"), TimelineDates.latest(oneDay));
     var year = occurred(Precision.YEAR, "2024", null);
     assertEquals(LocalDate.parse("2024-01-01"), TimelineDates.earliest(year));
     assertEquals(LocalDate.parse("2024-12-31"), TimelineDates.latest(year));
@@ -303,32 +290,33 @@ class FindingViewsTests {
   }
 
   @Test
-  void issueIsNamedByItsLatestMentionInTheGivenRevisionsOnly() {
-    var jan = meeting(JAN, JAN_15, proposal(1, JAN_15, stated(NAV)));
-    var feb = meeting(FEB, FEB_3, proposal(2, FEB_3, stated(NAV)));
-    var unpublished = meeting(id(3), LocalDate.parse("2026-03-03"));
-    var history =
-        new IssueHistory(
-            new Issue(NAV, "Unpublished name", false),
-            List.of(
-                mentioned(jan, "Nav Center"),
-                mentioned(feb, "Navigation Ctr", "Navigation Center"),
-                mentioned(unpublished, "Unpublished name")));
+  void issueIsNamedByItsMentionInTheLatestMeeting() {
+    var jan = as(meeting(JAN, JAN_15, proposal(1, JAN_15, stated(NAV))), "a", "Nav Center");
+    var feb = as(meeting(FEB, FEB_3, proposal(2, FEB_3, stated(NAV))), "b", "Navigation Center");
 
-    var views = new FindingViews(List.of(jan, feb), List.of(history));
-
-    assertEquals("Navigation Center", views.issueSummaries().getFirst().name());
-    var link = views.meetingDevelopments(JAN).getFirst().issues().getFirst();
-    assertEquals("Navigation Center", link.issueName());
+    for (var views : List.of(views(jan, feb), views(feb, jan))) {
+      assertEquals("Navigation Center", views.issueSummaries().getFirst().name());
+      var link = views.meetingDevelopments(JAN).getFirst().issues().getFirst();
+      assertEquals("Navigation Center", link.issueName());
+    }
   }
 
   @Test
-  void issueMentionedOnlyOutsideTheGivenRevisionsIsUnknown() {
-    var jan = meeting(JAN, JAN_15, proposal(1, JAN_15, stated(NAV)));
-    var other = meeting(FEB, FEB_3);
-    var history = new IssueHistory(new Issue(NAV, "x", false), List.of(mentioned(other, "x")));
-    assertThrows(
-        IllegalArgumentException.class, () -> new FindingViews(List.of(jan), List.of(history)));
+  void sameDayMeetingsNameAnIssueInSourceMeetingIdOrder() {
+    var first = as(meeting(JAN, JAN_15, proposal(1, JAN_15, stated(NAV))), "200", "From 200");
+    var second = as(meeting(FEB, JAN_15, proposal(2, JAN_15, stated(NAV))), "100", "From 100");
+
+    assertEquals("From 200", views(first, second).issueSummaries().getFirst().name());
+    assertEquals("From 200", views(second, first).issueSummaries().getFirst().name());
+  }
+
+  @Test
+  void rejectsALinkToAnIssueItsOwnRevisionDoesNotMention() {
+    var linked = meeting(JAN, JAN_15, proposal(1, JAN_15, stated(NAV)));
+    var unmentioned =
+        revision(JAN, JAN_15, linked.developments(), List.of(), linked.associations());
+    var feb = meeting(FEB, FEB_3, proposal(2, FEB_3, stated(NAV)));
+    assertThrows(IllegalArgumentException.class, () -> views(unmentioned, feb));
   }
 
   @Test
@@ -371,8 +359,9 @@ class FindingViewsTests {
   }
 
   @Test
-  void recordDevelopmentsListOnlyDevelopmentsCitingTheRecord() {
-    var views = views(proposal(1, JAN_15));
+  void recordDevelopmentsListOnlyDevelopmentsWhoseOwnEvidenceCitesTheRecord() {
+    var agendaLink = link(NAV, Basis.INFERRED, agenda(0, "Navigation Center report"));
+    var views = views(proposal(1, JAN_15, agendaLink));
     assertEquals(1, views.recordDevelopments(MINUTES).size());
     assertTrue(views.recordDevelopments(AGENDA).isEmpty());
   }
@@ -555,8 +544,6 @@ class FindingViewsTests {
     var inferred = link(NAV, Basis.INFERRED, minutes(0, "Council "));
     assertThrows(
         IllegalArgumentException.class, () -> views(proposal(1, JAN_15, stated(NAV), inferred)));
-    var noHistory = link(id(999), Basis.INFERRED, minutes(0, "Council "));
-    assertThrows(IllegalArgumentException.class, () -> views(proposal(1, JAN_15, noHistory)));
     var dev = proposal(1, JAN_15);
     var stray =
         new Association(id(4242), NAV, Basis.INFERRED, List.of(minutes(0, "Council ")));

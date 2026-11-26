@@ -1,4 +1,4 @@
-# ADR-0052: Assemble agenda items, record lists and unavailable outcomes in the T10 routes
+# ADR-0050: Assemble agenda items, record lists and unavailable outcomes in the T10 routes
 
 - **Status:** Proposed
 - **Date:** 2026-11-25
@@ -19,7 +19,9 @@ The views were ready for review before any of this was settled. Waiting would ho
 
 ## Decision
 
-T08 provides the finding-based views only. They take the saved revisions the caller chooses and the matching issue histories, and add nothing from Records.
+T08 provides the finding-based views only. They take the saved revisions the caller chooses and add nothing from Records.
+
+The views are deterministic. No model is called after analysis. An issue's summary is its developments' saved descriptions in timeline order, as the Release 1 scope agreed on November 18, 2026 defers model-written summaries.
 
 The T10 routes put together each public page:
 - The routes read the pinned manifest, choose its revisions (one per meeting) and load them through analysis.
@@ -53,3 +55,5 @@ The rule for when an outcome counts as unavailable is agreed and tested with the
 ## AI assistance and provenance
 
 Claude drafted this record from the SRS v2.0 requirements, the SPMP task table, ADR-0051 and the T08 views code. Michael chose to move FR-38 and the agenda part of the meeting overview to T10 for a smoother development flow. No implementation of the T10 routes or of FR-38 is claimed by this record.
+
+This record was first numbered ADR-0052. In the PR #6 review on November 26, 2026, Kazim asked for ADR-0050, the number reserved for T08's deterministic-summaries decision, which keeps ADR-0052 for search storage and ADR-0053 for the public read path.

@@ -10,7 +10,6 @@ import java.util.Optional;
 import java.util.UUID;
 import org.civictracker.analysis.domain.Candidates;
 import org.civictracker.analysis.domain.FindingKind;
-import org.civictracker.analysis.domain.IssueHistory;
 import org.civictracker.analysis.domain.SavedFindings;
 
 /**
@@ -22,7 +21,7 @@ import org.civictracker.analysis.domain.SavedFindings;
  * matter may appear as two issues when the model did not link it to the earlier one.
  *
  * <p>Agenda items, the meeting's record list and FR-38's unavailable outcomes need Records data
- * and the publication manifest, so the T10 routes add them (ADR-0052).
+ * and the publication manifest, so the T10 routes add them (ADR-0050).
  */
 public final class FindingViews {
   public record LinkView(
@@ -79,38 +78,38 @@ public final class FindingViews {
   private final Map<UUID, String> issueNames = new LinkedHashMap<>();
   private final Map<UUID, MeetingDevelopment> developments = new LinkedHashMap<>();
 
+  /** The order in which a later meeting's mention renames an issue. */
+  private static final Comparator<SavedFindings> MEETING_ORDER =
+      Comparator.comparing(SavedFindings::meetingDate)
+          .thenComparing(SavedFindings::officialId)
+          .thenComparing(SavedFindings::meetingId);
+
   /**
-   * An issue is named by its latest mention among {@code revisions} only. {@link
-   * IssueHistory#issue()} is not used, because its name can come from a revision outside the
-   * publication (ADR-0051).
+   * An issue is named by its mention in the latest of {@code revisions}, ordered by meeting date,
+   * then source meeting ID, then meeting ID. Within one revision, T07 keeps an issue's first
+   * mention name. No name from a revision outside {@code revisions} is used (ADR-0051).
    *
    * @param revisions one saved revision per meeting, all from one publication
-   * @param histories the history of every issue those revisions link to
    */
-  public FindingViews(List<SavedFindings> revisions, List<IssueHistory> histories) {
-    var included = new HashSet<UUID>();
-    for (var revision : revisions) included.add(revision.revisionId());
-    var seen = new HashSet<UUID>();
-    for (var history : histories) {
-      var issueId = history.issue().issueId();
-      if (!seen.add(issueId)) throw new IllegalArgumentException("Duplicate issue " + issueId);
-      String name = null;
-      for (var revision : history.revisions())
-        if (included.contains(revision.revisionId()) && !revision.mentionNames().isEmpty())
-          name = revision.mentionNames().getLast();
-      if (name != null) issueNames.put(issueId, name);
-    }
+  public FindingViews(List<SavedFindings> revisions) {
     var meetings = new HashSet<UUID>();
-    for (var revision : revisions) {
+    for (var revision : revisions)
       if (!meetings.add(revision.meetingId()))
         throw new IllegalArgumentException("Two revisions of meeting " + revision.meetingId());
+    for (var revision : revisions.stream().sorted(MEETING_ORDER).toList()) {
+      var mentioned = new HashSet<UUID>();
+      for (var issue : revision.issues()) {
+        mentioned.add(issue.issueId());
+        issueNames.put(issue.issueId(), issue.name());
+      }
       for (var placed : MeetingDevelopment.of(revision)) {
         var id = placed.development().id();
         if (developments.putIfAbsent(id, placed) != null)
           throw new IllegalArgumentException("Duplicate development " + id);
         for (var link : placed.links())
-          if (!issueNames.containsKey(link.issueId()))
-            throw new IllegalArgumentException("No mention in these revisions: " + link.issueId());
+          if (!mentioned.contains(link.issueId()))
+            throw new IllegalArgumentException(
+                "Link to an issue its revision does not mention: " + link.issueId());
       }
     }
   }
@@ -165,7 +164,10 @@ public final class FindingViews {
         .toList();
   }
 
-  /** Developments citing any version of this record, in timeline order (FR-37 allows none). */
+  /**
+   * Developments whose own evidence cites any version of this record, in timeline order (FR-37
+   * allows none). Link evidence doesn't count: it explains why a development belongs to an issue.
+   */
   public List<DevelopmentView> recordDevelopments(UUID recordId) {
     return developments.values().stream()
         .filter(

@@ -54,4 +54,4 @@ Records name the requirements version they use. Later records can refine an earl
 | ADR-0047 | Add a light and dark theme toggle that starts from the system setting | 2026-11-18 |
 | ADR-0048 | Save meeting analysis revisions through a durable analyze operation | 2026-11-22 |
 | ADR-0049 | Continue issues across meetings through prior-issue context, without merge or split | 2026-11-22 |
-| ADR-0052 | Assemble agenda items, record lists and unavailable outcomes in the T10 routes | 2026-11-25 |
+| ADR-0050 | Assemble agenda items, record lists and unavailable outcomes in the T10 routes | 2026-11-25 |

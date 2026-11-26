@@ -42,26 +42,21 @@ public final class TimelineDates {
           .thenComparingInt(MeetingDevelopment::sourceOrder);
 
   static LocalDate earliest(Candidates.DateClaim date) {
-    return first(date.start());
-  }
-
-  static LocalDate latest(Candidates.DateClaim date) {
-    return last(date.precision() == Candidates.Precision.RANGE ? date.end() : date.start());
-  }
-
-  private static LocalDate first(String value) {
-    return switch (value.length()) {
-      case 4 -> Year.parse(value).atDay(1);
-      case 7 -> YearMonth.parse(value).atDay(1);
-      default -> LocalDate.parse(value);
+    return switch (date.precision()) {
+      case YEAR -> Year.parse(date.start()).atDay(1);
+      case MONTH -> YearMonth.parse(date.start()).atDay(1);
+      case DAY, RANGE -> LocalDate.parse(date.start());
+      case UNKNOWN -> throw new IllegalArgumentException("A date of unknown precision has no day");
     };
   }
 
-  private static LocalDate last(String value) {
-    return switch (value.length()) {
-      case 4 -> Year.parse(value).atMonth(12).atEndOfMonth();
-      case 7 -> YearMonth.parse(value).atEndOfMonth();
-      default -> LocalDate.parse(value);
+  static LocalDate latest(Candidates.DateClaim date) {
+    return switch (date.precision()) {
+      case YEAR -> Year.parse(date.start()).atMonth(12).atEndOfMonth();
+      case MONTH -> YearMonth.parse(date.start()).atEndOfMonth();
+      case DAY -> LocalDate.parse(date.start());
+      case RANGE -> LocalDate.parse(date.end());
+      case UNKNOWN -> throw new IllegalArgumentException("A date of unknown precision has no day");
     };
   }
 }
