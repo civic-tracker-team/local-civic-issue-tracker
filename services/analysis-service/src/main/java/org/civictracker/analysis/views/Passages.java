@@ -9,12 +9,16 @@ import org.civictracker.analysis.domain.SavedFindings.EvidenceSpan;
 /**
  * Joins saved evidence spans, in citation order, into readable passages. A span joins the
  * passage before it when it continues or overlaps that passage's last span in the same segment,
- * or when it starts the next line: same version and page or item ({@code unitOrdinal}), the next
- * {@code segmentOrdinal}, from offset 0. Joined lines are separated by a line break. A span
- * already covered earlier is dropped. Text is only ever copied from saved spans.
+ * or when it starts the next segment: same version and page or item ({@code unitOrdinal}), the
+ * next {@code segmentOrdinal}, from offset 0, and the passage so far reached the end of its
+ * segment. Segments joined this way are separated by a line break. A span already covered
+ * earlier is dropped. Text is only ever copied from saved spans.
  *
- * <p>Whether the earlier line was quoted to its end cannot be checked, because spans do not
- * carry their segment's length.
+ * <p>Evidence always covers whole model lines (ADR-0039), and {@code CitationIndex} keeps the
+ * trailing line break on every line except a segment's last. So a passage that does not end in a
+ * line break reached its segment's end, and one that does would skip the segment's remaining
+ * lines if joined. A segment whose own text ends in a line break is never joined across, which
+ * errs toward separate passages.
  */
 final class Passages {
   private Passages() {}
@@ -55,12 +59,17 @@ final class Passages {
           && span.start() <= last().end();
     }
 
-    /** True when the span starts the line after the last piece, on the same page or item. */
-    boolean nextLine(EvidenceSpan span) {
+    /**
+     * True when the span starts the segment after the last piece, on the same page or item, and
+     * the last piece reached the end of its own segment.
+     */
+    boolean nextSegment(EvidenceSpan span) {
       return first.versionId().equals(span.versionId())
           && first.unitOrdinal() == span.unitOrdinal()
           && span.segmentOrdinal() == last().segmentOrdinal() + 1
-          && span.start() == 0;
+          && span.start() == 0
+          && !text.isEmpty()
+          && text.charAt(text.length() - 1) != '\n';
     }
   }
 
@@ -75,7 +84,7 @@ final class Passages {
         run.pieces.set(
             run.pieces.size() - 1,
             new Piece(last.segmentId(), last.segmentOrdinal(), last.start(), span.end()));
-      } else if (run != null && run.nextLine(span)) {
+      } else if (run != null && run.nextSegment(span)) {
         run.text.append('\n').append(span.text());
         run.pieces.add(piece(span));
       } else runs.add(new Run(span));

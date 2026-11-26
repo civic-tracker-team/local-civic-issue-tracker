@@ -442,6 +442,31 @@ class FindingViewsTests {
     assertEquals(List.of("b", "a"), texts(line(2, "b"), line(1, "a")));
   }
 
+  /** Lines of a native PDF segment on page 3, which also has OCR line segments after it. */
+  static EvidenceSpan nativeText(int start, String text) {
+    return span(MINUTES, MINUTES_V, id(700), 2, 0, start, text, PAGE_3);
+  }
+
+  static EvidenceSpan ocrAfterNative(String text) {
+    return span(MINUTES, MINUTES_V, id(701), 2, 1, 0, text, PAGE_3);
+  }
+
+  @Test
+  void citationEndingBeforeItsSegmentsLastLineDoesNotJoinTheNextSegment() {
+    // Lines 3-4 of a native segment were cited, then the first OCR line. Line 5 sits between
+    // them, so joining would hide it. Only a segment's last line lacks a trailing line break.
+    var linesThreeAndFour = nativeText(20, "Line three.\nLine four.\n");
+    assertEquals(
+        List.of("Line three.\nLine four.\n", "Caption"),
+        texts(linesThreeAndFour, ocrAfterNative("Caption")));
+  }
+
+  @Test
+  void citationReachingItsSegmentsEndJoinsTheNextSegment() {
+    var lastLine = nativeText(40, "Line six.");
+    assertEquals(List.of("Line six.\nCaption"), texts(lastLine, ocrAfterNative("Caption")));
+  }
+
   @Test
   void nextLineMustStartAtItsBeginning() {
     var midLine = span(MINUTES, MINUTES_V, id(502), 2, 2, 3, "tail", PAGE_3);
