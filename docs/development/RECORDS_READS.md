@@ -7,9 +7,11 @@ The records API provides authenticated access to retained metadata, original fil
 | GET route | Response |
 |---|---|
 | `/internal/v1/documents/{id}` | Current version, source identifiers, contexts, URLs and retained version IDs |
-| `/internal/v1/document-versions/{id}` | Exact document and artifact IDs, SHA-256, byte length, filename, source observations and sealed preparation IDs |
+| `/internal/v1/document-versions/{id}` | Exact document and artifact IDs, SHA-256, byte length, filename, portal title, source observations and sealed preparation IDs |
 | `/internal/v1/artifacts/{id}/bytes` | Original bytes streamed as an attachment |
 | `/internal/v1/document-versions/{id}/content` | Sealed prepared text and source locations |
+
+A version's `title` is the portal's label for those bytes, such as a PrimeGov template name or an attachment's link text. It comes from the latest current-source observation, and each observation keeps its own `title`. It is untrusted source text and can be null.
 
 IDs are internal UUIDs. The version list has a deterministic technical order, not a historical sequence. `firstObservedAt` means the earliest retained observation of those bytes. It does not substitute for an unknown official publication date. Historical versions retain their own URLs and artifact references.
 

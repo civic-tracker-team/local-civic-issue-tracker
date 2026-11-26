@@ -91,6 +91,9 @@ class RecordsReadHttpTests {
     assertEquals(first.sha256(), version.sha256());
     assertEquals(List.of("https://example.invalid/original?source=1"), version.sourceUrls());
     assertEquals(Instant.parse("2026-11-08T12:00:00Z"), version.firstObservedAt());
+    // The portal label is retained as untrusted text and returned unchanged, never as a path.
+    assertEquals("../unsafe\r\nname.pdf", version.title());
+    assertEquals("../unsafe\r\nname.pdf", version.observations().getFirst().title());
     var bytes = get("/internal/v1/artifacts/" + version.artifactId() + "/bytes");
     assertEquals(200, bytes.statusCode());
     assertArrayEquals(ORIGINAL, bytes.body());
