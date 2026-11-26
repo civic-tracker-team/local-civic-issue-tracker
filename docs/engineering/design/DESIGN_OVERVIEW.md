@@ -52,5 +52,6 @@ Histories use the relevant evidence currently available, including later sources
 - [Record acquisition](T04_DESIGN.md) explains PrimeGov discovery and retrieval.
 - [Record preparation](T05_DESIGN.md) explains extraction, OCR and retained content.
 - [Model evaluation](T06_DESIGN.md) explains whole-meeting feasibility trials and candidate validation.
+- [Finding views](T08_DESIGN.md) explains issue timelines, meeting developments and source passages built from saved findings.
 
 Individual rationales are recorded in the architecture decision records. Codex assisted with organizing these design documents and checking their consistency with the requirements and code. Kazim Yigit Ablay selected the recorded design choices.
