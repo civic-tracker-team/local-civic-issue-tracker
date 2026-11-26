@@ -2,6 +2,6 @@
 
 Java package: `org.civictracker.search`.
 
-Provides search over published issues, individual records and meetings. Obtains source and derived data through records and analysis APIs. Michael leads detailed search design; matching, ranking and any search-specific persistence remain open.
+Provides keyword search over the current published issues, individual records and meetings. A scheduled indexer reads the coordinator's current manifest and only the records and analysis data it names. It writes a PostgreSQL full-text index for that publication in its own `search` schema. `GET /api/v1/search` serves results with selectable types and the collection's coverage.
 
-The Spring Boot entry point starts the HTTP baseline, with a real-server startup test. Search behavior, indexing and owner API clients are not implemented. No search engine or endpoint contract is selected here.
+Setup, indexing rules and the response contract are in the [search guide](../../docs/development/SEARCH.md). The design decision is [ADR-0053](../../docs/engineering/adr/ADR-0053-search-index-per-publication.md). Ranking beyond PostgreSQL `ts_rank` is not tuned yet.

@@ -14,7 +14,8 @@ $names = @('POSTGRES_PASSWORD', 'RECORDS_DB_URL', 'RECORDS_DB_USER',
     'RECORDS_DB_PASSWORD', 'RECORDS_MIGRATION_USER', 'RECORDS_MIGRATION_PASSWORD',
     'RECORDS_STORAGE_ROOT', 'ANALYSIS_DB_URL', 'ANALYSIS_DB_USER',
     'ANALYSIS_DB_PASSWORD', 'ANALYSIS_MIGRATION_USER', 'ANALYSIS_MIGRATION_PASSWORD',
-    'ANALYSIS_STORAGE_ROOT')
+    'ANALYSIS_STORAGE_ROOT', 'SEARCH_DB_URL', 'SEARCH_DB_USER', 'SEARCH_DB_PASSWORD',
+    'SEARCH_MIGRATION_USER', 'SEARCH_MIGRATION_PASSWORD')
 $previous = @{}
 foreach ($name in $names) {
     $previous[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
@@ -40,6 +41,10 @@ try {
     $env:ANALYSIS_DB_PASSWORD = [Guid]::NewGuid().ToString('N')
     $env:ANALYSIS_MIGRATION_USER = 'lcit_analysis_migrator'
     $env:ANALYSIS_MIGRATION_PASSWORD = [Guid]::NewGuid().ToString('N')
+    $env:SEARCH_DB_USER = 'lcit_search_runtime'
+    $env:SEARCH_DB_PASSWORD = [Guid]::NewGuid().ToString('N')
+    $env:SEARCH_MIGRATION_USER = 'lcit_search_migrator'
+    $env:SEARCH_MIGRATION_PASSWORD = [Guid]::NewGuid().ToString('N')
     Invoke-DockerChecked -Arguments @('run', '-d', '--name', $container,
         '--label', "lcit.purpose=$purpose", '--env', 'POSTGRES_PASSWORD',
         '--env', 'POSTGRES_DB=lcit_records_test', '-p', '127.0.0.1::5432',
@@ -66,6 +71,12 @@ try {
         -v "migration_password=$env:ANALYSIS_MIGRATION_PASSWORD" `
         -v "runtime_role=$env:ANALYSIS_DB_USER" -v "runtime_password=$env:ANALYSIS_DB_PASSWORD"
     if ($LASTEXITCODE -ne 0) { throw 'Analysis database provisioning failed.' }
+    $searchBootstrap = Get-Content (Join-Path $repoRoot 'infra/postgres/search-bootstrap.sql') -Raw
+    $searchBootstrap | & docker exec -i $container psql -U postgres -d lcit_records_test `
+        -v ON_ERROR_STOP=1 -v "migration_role=$env:SEARCH_MIGRATION_USER" `
+        -v "migration_password=$env:SEARCH_MIGRATION_PASSWORD" `
+        -v "runtime_role=$env:SEARCH_DB_USER" -v "runtime_password=$env:SEARCH_DB_PASSWORD"
+    if ($LASTEXITCODE -ne 0) { throw 'Search database provisioning failed.' }
     'CREATE SCHEMA coordinator; REVOKE ALL ON SCHEMA coordinator FROM PUBLIC;' |
         & docker exec -i $container psql -U postgres -d lcit_records_test -v ON_ERROR_STOP=1
     if ($LASTEXITCODE -ne 0) { throw 'Permission-test schema setup failed.' }
@@ -75,6 +86,7 @@ try {
     $env:RECORDS_DB_URL = "jdbc:postgresql://127.0.0.1:$port/lcit_records_test"
     $env:RECORDS_STORAGE_ROOT = Join-Path $outputRoot 'storage'
     $env:ANALYSIS_DB_URL = $env:RECORDS_DB_URL
+    $env:SEARCH_DB_URL = $env:RECORDS_DB_URL
     $env:ANALYSIS_STORAGE_ROOT = Join-Path $outputRoot 'analysis-storage'
     $mavenArguments = @('--batch-mode', '--no-transfer-progress', 'clean', 'verify')
     if ($MavenRepository) { $mavenArguments += "-Dmaven.repo.local=$MavenRepository" }

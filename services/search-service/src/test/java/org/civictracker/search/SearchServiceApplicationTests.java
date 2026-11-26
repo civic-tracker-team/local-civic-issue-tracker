@@ -8,13 +8,18 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.civictracker.search.index.Indexer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.ApplicationContext;
 import org.springframework.core.env.Environment;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 class SearchServiceApplicationTests {
@@ -22,10 +27,12 @@ class SearchServiceApplicationTests {
   @LocalServerPort private int port;
 
   @Autowired private Environment environment;
+  @Autowired private RequestMappingHandlerMapping mappings;
+  @Autowired private ApplicationContext context;
 
   @Test
   @Timeout(30)
-  void startsAnIndependentHttpServerWithoutProductRoutes() throws Exception {
+  void startsWithOnlyThePublicSearchRouteAndNoIndexerByDefault() throws Exception {
     assertTrue(port > 0);
     assertEquals("search-service", environment.getProperty("spring.application.name"));
     HttpRequest request =
@@ -38,5 +45,12 @@ class SearchServiceApplicationTests {
       HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
       assertEquals(404, response.statusCode());
     }
+    var routes =
+        mappings.getHandlerMethods().keySet().stream()
+            .flatMap(mapping -> mapping.getPatternValues().stream())
+            .filter(path -> path.startsWith("/internal/") || path.startsWith("/api/"))
+            .collect(Collectors.toSet());
+    assertEquals(Set.of("/api/v1/search"), routes);
+    assertTrue(context.getBeansOfType(Indexer.class).isEmpty());
   }
 }
