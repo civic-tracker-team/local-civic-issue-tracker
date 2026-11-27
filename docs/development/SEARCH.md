@@ -1,6 +1,6 @@
 # Search
 
-The search service finds issues, records and meetings in the current published collection. It keeps a PostgreSQL full-text index for each publication and serves one public route. Matching is keyword search with selectable result types. Detailed ranking remains open for later releases ([ADR-0053](../engineering/adr/ADR-0053-search-index-per-publication.md)).
+The search service finds issues, records and meetings in the current published collection. It keeps a PostgreSQL full-text index for each publication and serves one public route. Matching is keyword search with selectable result types. Detailed ranking remains open for later releases ([ADR-0052](../engineering/adr/ADR-0052-search-index-per-publication.md)).
 
 ## Configure database and owners
 

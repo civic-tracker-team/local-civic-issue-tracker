@@ -1,4 +1,4 @@
-# ADR-0053: Search a PostgreSQL full-text index built per publication
+# ADR-0052: Search a PostgreSQL full-text index built per publication
 
 - **Status:** Proposed
 - **Date:** 2026-11-25
