@@ -57,6 +57,36 @@ class IndexPlanTests {
   }
 
   @Test
+  void sourceTextCannotFakeSnippetMatchMarkers() {
+    var analyzed = meeting("2026-10-07", "a");
+    var meeting =
+        new Published.Meeting(
+            analyzed.meetingId(), "a", analyzed.date(), "Council \u0001beta\u0002", "SKIPPED",
+            null, analyzed.sources());
+    var items = Map.of("1", "Alpha \u0001beta\u0002 gamma");
+    var plan = IndexPlan.build(collection(List.of(meeting), Map.of(), false, items));
+    for (var entry : plan.entries()) {
+      for (var text : new String[] {entry.label(), entry.context(), entry.body(), entry.location()}) {
+        assertFalse(text != null && (text.contains("\u0001") || text.contains("\u0002")), text);
+      }
+    }
+    assertEquals("Council beta", only(plan, IndexPlan.Kind.MEETING).label());
+  }
+
+  @Test
+  void meetingRowsKeepAgendaOrder() {
+    var analyzed = meeting("2026-10-07", "a");
+    var meeting =
+        new Published.Meeting(
+            analyzed.meetingId(), "a", analyzed.date(), "Council", "SKIPPED", null,
+            analyzed.sources());
+    var items = new java.util.LinkedHashMap<String, String>();
+    for (int i = 1; i <= 12; i++) items.put("item-" + i, "Label " + i);
+    var plan = IndexPlan.build(collection(List.of(meeting), Map.of(), false, items));
+    assertEquals(String.join("\n", items.values()), only(plan, IndexPlan.Kind.MEETING).body());
+  }
+
+  @Test
   void aCollectionMissingAPinnedRevisionIsRejected() {
     var meeting = meeting("2026-10-07", "a");
     org.junit.jupiter.api.Assertions.assertThrows(
@@ -118,9 +148,17 @@ class IndexPlanTests {
 
   private static Published.Collection collection(
       List<Published.Meeting> meetings, Map<UUID, Published.Revision> revisions, boolean text) {
+    return collection(meetings, revisions, text, Map.of());
+  }
+
+  private static Published.Collection collection(
+      List<Published.Meeting> meetings,
+      Map<UUID, Published.Revision> revisions,
+      boolean text,
+      Map<String, String> items) {
     var ref = new Published.SourceRef(DOC, VERSION);
     var records = new java.util.HashMap<UUID, Published.MeetingRecords>();
-    meetings.forEach(m -> records.put(m.meetingId(), new Published.MeetingRecords("7", Map.of())));
+    meetings.forEach(m -> records.put(m.meetingId(), new Published.MeetingRecords("7", items)));
     return new Published.Collection(
         new Published.Manifest(UUID.randomUUID(), List.of(), meetings),
         records,

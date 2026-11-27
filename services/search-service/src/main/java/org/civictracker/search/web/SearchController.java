@@ -2,6 +2,7 @@ package org.civictracker.search.web;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.civictracker.search.owners.Text;
 import org.civictracker.search.query.SearchQueries;
 import org.civictracker.search.query.SearchResponse;
 import org.civictracker.search.query.SearchUnavailable;
@@ -45,7 +46,10 @@ public class SearchController {
       @RequestParam(name = "limit", defaultValue = "10") int limit,
       @RequestParam(name = "offset", defaultValue = "0") int offset) {
     var query = q.strip();
-    if (query.isEmpty() || query.codePointCount(0, query.length()) > MAX_QUERY_LENGTH) {
+    // Control characters can't reach PostgreSQL (it rejects NUL) and are never indexed.
+    if (query.isEmpty()
+        || query.codePointCount(0, query.length()) > MAX_QUERY_LENGTH
+        || !query.equals(Text.clean(query))) {
       throw new BadSearch("INVALID_QUERY");
     }
     if (limit < 1 || limit > MAX_LIMIT || offset < 0 || offset > MAX_OFFSET) {

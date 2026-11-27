@@ -1,6 +1,8 @@
 package org.civictracker.search.owners;
 
 import java.time.LocalDate;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,7 +40,8 @@ public final class Published {
   /** Records' meeting metadata: committee and agenda item labels keyed by official item ID. */
   public record MeetingRecords(String committeeId, Map<String, String> itemLabels) {
     public MeetingRecords {
-      itemLabels = Map.copyOf(itemLabels);
+      // Keep agenda order: meeting rows join the labels in this order.
+      itemLabels = Collections.unmodifiableMap(new LinkedHashMap<>(itemLabels));
     }
   }
 

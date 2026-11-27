@@ -42,9 +42,18 @@ final class OwnerStub implements AutoCloseable {
         status = 200;
         body = JSON.writeValueAsBytes(routes.get(key));
       } else {
+        // Owners answer an absent resource with a 404 problem; the coordinator's code for "not
+        // published yet" is NO_PUBLICATION.
         status = 404;
+        var code =
+            uri.getRawPath().equals("/internal/v1/publications/current")
+                ? "NO_PUBLICATION"
+                : "NOT_FOUND";
+        body = JSON.writeValueAsBytes(Map.of("code", code));
       }
-      exchange.getResponseHeaders().add("Content-Type", "application/json");
+      exchange
+          .getResponseHeaders()
+          .add("Content-Type", status == 404 ? "application/problem+json" : "application/json");
       exchange.sendResponseHeaders(status, body.length == 0 ? -1 : body.length);
       if (body.length > 0) exchange.getResponseBody().write(body);
       exchange.close();

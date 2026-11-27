@@ -49,7 +49,7 @@ public final class PublishedSources {
 
   /** The current manifest, or empty before the first publication. */
   public Optional<Manifest> current() throws OwnerUnavailable, InterruptedException {
-    var found = coordinator.find("/internal/v1/publications/current");
+    var found = coordinator.find("/internal/v1/publications/current", "NO_PUBLICATION");
     return found.isEmpty() ? Optional.empty() : Optional.of(manifest(found.get()));
   }
 
@@ -138,7 +138,7 @@ public final class PublishedSources {
               id,
               text(meeting, "officialId"),
               date(meeting, "date"),
-              text(meeting, "title"),
+              Text.clean(text(meeting, "title")),
               disposition,
               revision,
               sources));
@@ -155,7 +155,7 @@ public final class PublishedSources {
     for (var item : node.path("items")) {
       var official = text(item, "officialItemId");
       var label = text(item, "label");
-      if (official != null && label != null) items.putIfAbsent(official, label);
+      if (official != null && label != null) items.putIfAbsent(official, Text.clean(label));
     }
     return new MeetingRecords(text(node.path("meeting"), "committeeId"), items);
   }

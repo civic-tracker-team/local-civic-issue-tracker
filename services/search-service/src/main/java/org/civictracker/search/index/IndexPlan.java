@@ -14,6 +14,7 @@ import org.civictracker.search.owners.Published;
 import org.civictracker.search.owners.Published.Meeting;
 import org.civictracker.search.owners.Published.Revision;
 import org.civictracker.search.owners.Published.SourceRef;
+import org.civictracker.search.owners.Text;
 
 /** Builds the searchable rows for one collected publication. Pure: no I/O and no clock. */
 public final class IndexPlan {
@@ -34,7 +35,15 @@ public final class IndexPlan {
       String body,
       String location,
       Map<String, Object> details,
-      LocalDate sortDate) {}
+      LocalDate sortDate) {
+    /** Every searched string is cleaned, so no source text can fake a snippet marker. */
+    public Entry {
+      label = Text.clean(label);
+      context = Text.clean(context);
+      body = Text.clean(body);
+      location = Text.clean(location);
+    }
+  }
 
   public record Plan(
       UUID publicationId,

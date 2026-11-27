@@ -20,16 +20,24 @@ Provision a `search` schema with separate migration and runtime roles. `infra/po
 
 Owner base URLs must use HTTPS, or plain HTTP to `127.0.0.1` or `[::1]`. They have no path, query or user information. Search does not follow redirects. Owner passwords are the plaintext halves of the bcrypt identities configured on each owner. With the indexer disabled, search starts without owner settings and serves whatever index it already has.
 
+Enable the indexer in one search process only. Two indexers could save an older publication after a newer one and move the current index back until the next poll. Search reads prepared content 20 units per page, so Records' `records.preparation.max-read-units` must stay at 20 or more, which is its default.
+
 ## Indexing
 
-Each poll reads `GET /internal/v1/publications/current` from the coordinator. If the publication already has the current index, nothing happens. Otherwise search reads only what that manifest names:
+Each poll reads `GET /internal/v1/publications/current` from the coordinator. A 404 with code `NO_PUBLICATION` means nothing is published yet; any other 404 is a failure, such as a wrong base URL. If the publication already has the current index, nothing happens. Otherwise search reads only what that manifest names:
 - each meeting from Records `/internal/v1/meetings/{id}`
 - each ANALYZED meeting's exact revision from analysis `/internal/v1/meeting-analyses/{revisionId}`
 - each pinned document and version, and that version's prepared content
 
 Records and analysis do not check publication membership in Release 1 (ADR-0051), so this restriction is the only membership boundary. Search never reads `/issues/{id}`, document current pointers or unpinned versions. A revision that does not match its manifest meeting fails the build, and so does one that cites a version outside the manifest.
 
-A record's indexed text comes from the preparation that the publication's revisions cite for that version. If no revision cites the version and it has exactly one sealed preparation, that one is used. Otherwise the record is indexed by its title, agenda item and meeting only. Responses report how many records were indexed this way. A proposed follow-up is to put the preparation ID in the manifest's source entries.
+A record's indexed text comes from the preparation that the publication's revisions cite for that version. If no revision cites the version and it has exactly one sealed preparation, that one is used. Otherwise, or when the preparation has no text, the record is indexed by its title, agenda item and meeting only. Responses report how many records were indexed this way.
+
+Two values are not pinned by the manifest and are read from Records at build time:
+- **The uncited fallback preparation.** If a later, unpublished run seals the only preparation of an uncited version, a rebuild indexes that text under the published record. A newer preparation can also make an uncited record title-only.
+- **The record title.** It comes from the version's latest observation, which may belong to an unpublished run. For listed records it also sets the record type.
+
+Putting the preparation ID in the manifest's source entries would close the first gap and is a proposed follow-up to ADR-0051.
 
 The whole index and the current-pointer move commit in one transaction, and older indexes are then deleted. If an owner read fails or returns inconsistent data, nothing is written. Searches keep using the previous collection, and the next poll tries again. Failures are logged with a stable code such as `OWNER_UNAVAILABLE` or `PUBLICATION_MISMATCH`.
 
@@ -38,7 +46,7 @@ The whole index and the current-pointer move commit in one transaction, and olde
 | Type | Label | Also matched |
 |---|---|---|
 | Issues | The issue's name at its latest mention among the published revisions | Earlier names, and descriptions of developments linked to the issue |
-| Records | The portal title of the pinned version | Agenda item, meeting title and each prepared page or agenda section |
+| Records | The portal title of the pinned version | Agenda item, meeting title and each prepared page or agenda section. Each pinned version is one hit, so two pinned versions of a document give two hits with the same `id`. |
 | Meetings | The meeting title | Agenda item labels and the meeting's development descriptions |
 
 Every published meeting is searchable, including cancelled, skipped and empty ones. A record without any issue link stays searchable (FR-37). Text uses PostgreSQL's `english` configuration, so word forms such as "approve" and "approved" match. Labels rank above context, and context ranks above body text.
@@ -83,9 +91,9 @@ Each hit has `id`, `label`, `date`, `location`, `snippet` and `details`. `versio
 | Records | Earliest meeting that includes it | `documentId`, `meetingId`, `meetingIds`, `meetingDate`, `meetingTitle`, `recordType`, `itemLabel`, `textSearched`, `issues` |
 | Meetings | Meeting date | `officialId`, `committeeId`, `disposition`, `recordCount` |
 
-A record's `issues` lists `{id, inferred}` for issues whose association evidence cites that version. `inferredOnly` marks an issue whose every published development link was inferred. The frontend should show the FR-45 caution for both. `location` is a record's best-matching page, such as "Page 2", or its agenda item.
+`textSearched` is false when the record was indexed by title only. A record's `issues` lists `{id, inferred}` for issues whose association evidence cites that version. `inferredOnly` marks an issue whose every published development link was inferred. The frontend should show the FR-45 caution for both. `location` is a record's best-matching page, such as "Page 2", or its agenda item.
 
-Before the first index exists, the route returns 503 with `NO_PUBLISHED_INDEX`. Invalid requests return 400 with `INVALID_QUERY`, `INVALID_TYPE`, `INVALID_PAGE` or `INVALID_REQUEST`. Every other route and method returns 404. Responses use `Cache-Control: no-store` and RFC 9457 problems with `code` and `correlationId`. Search creates no sessions or cookies. Remote callers need HTTPS as reported by the servlet connection, so API routing needs a trusted deployment configuration.
+Before the first index exists, the route returns 503 with `NO_PUBLISHED_INDEX`. Invalid requests return 400 with `INVALID_QUERY`, `INVALID_TYPE`, `INVALID_PAGE` or `INVALID_REQUEST`; a query containing control characters is `INVALID_QUERY`. Every other route and method returns 404, and so does a request that accepts only non-JSON types such as `text/html`. Responses use `Cache-Control: no-store` and RFC 9457 problems with `code` and `correlationId`. Search creates no sessions or cookies. Remote callers need HTTPS as reported by the servlet connection, so API routing needs a trusted deployment configuration.
 
 ## Verify
 

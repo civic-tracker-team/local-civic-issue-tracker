@@ -36,6 +36,8 @@ class SearchFoundationTests {
   void theCurrentPointerIsASingleRow() {
     assertThrows(
         DataAccessException.class, () -> jdbc.update("insert into search.current_index(id) values (2)"));
+    assertThrows(
+        DataAccessException.class, () -> jdbc.update("delete from search.current_index where id = 0"));
     assertEquals(1, jdbc.queryForObject("select count(*) from search.current_index", Integer.class));
   }
 }

@@ -83,6 +83,12 @@ class SearchHttpTests {
   }
 
   @Test
+  void aMisrouted404IsAFailureNotAnEmptyCollection() throws Exception {
+    OWNERS.fail("/internal/v1/publications/current", 404);
+    assertEquals(Indexer.Outcome.FAILED, indexer.refresh());
+  }
+
+  @Test
   void referenceQueriesReturnTheExpectedPublishedMatches() throws Exception {
     publishFirst();
     var parking = search("parking structure", null);
@@ -243,6 +249,9 @@ class SearchHttpTests {
     publishFirst();
     assertProblem(get("/api/v1/search?q=%20%20"), 400, "INVALID_QUERY");
     assertProblem(get("/api/v1/search?q=" + "a".repeat(201)), 400, "INVALID_QUERY");
+    // PostgreSQL refuses NUL; that must be a bad request, not a reported outage.
+    assertProblem(get("/api/v1/search?q=park%00ing"), 400, "INVALID_QUERY");
+    assertProblem(get("/api/v1/search?q=park%01ing"), 400, "INVALID_QUERY");
     assertProblem(get("/api/v1/search?q=parking&types=documents"), 400, "INVALID_TYPE");
     assertProblem(get("/api/v1/search?q=parking&types="), 400, "INVALID_TYPE");
     assertProblem(get("/api/v1/search?q=parking&limit=0"), 400, "INVALID_PAGE");

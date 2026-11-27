@@ -61,13 +61,15 @@ public final class OwnerHttp {
 
   /** Reads a resource that must exist. */
   public JsonNode get(String path) throws OwnerUnavailable, InterruptedException {
-    return find(path)
-        .orElseThrow(
-            () -> new OwnerUnavailable("OWNER_NOT_FOUND", owner + " 404 at " + route(path)));
+    return find(path, null).orElseThrow();
   }
 
-  /** Reads a resource whose absence is a meaningful answer. */
-  public Optional<JsonNode> find(String path) throws OwnerUnavailable, InterruptedException {
+  /**
+   * Reads a resource whose absence is a meaningful answer: a 404 problem carrying {@code
+   * absentCode}. Any other 404, such as a wrong base URL or route, is a failure.
+   */
+  public Optional<JsonNode> find(String path, String absentCode)
+      throws OwnerUnavailable, InterruptedException {
     if (!path.startsWith("/") || path.startsWith("//")) {
       throw new IllegalArgumentException("Invalid owner path");
     }
@@ -93,7 +95,10 @@ public final class OwnerHttp {
           "OWNER_UNREACHABLE", owner + " unreachable at " + route(path), error.getCause());
     }
     if (response.statusCode() == 404) {
-      return Optional.empty();
+      if (absentCode != null && absentCode.equals(problemCode(response.body()))) {
+        return Optional.empty();
+      }
+      throw new OwnerUnavailable("OWNER_NOT_FOUND", owner + " 404 at " + route(path));
     }
     if (response.statusCode() != 200) {
       throw new OwnerUnavailable(
@@ -103,6 +108,15 @@ public final class OwnerHttp {
       return Optional.of(JSON.readTree(response.body()));
     } catch (JacksonException error) {
       throw new OwnerUnavailable("OWNER_INVALID_RESPONSE", owner + " sent unreadable JSON", error);
+    }
+  }
+
+  private static String problemCode(String body) {
+    try {
+      var code = JSON.readTree(body).path("code");
+      return code.isString() ? code.asString() : null;
+    } catch (JacksonException error) {
+      return null;
     }
   }
 

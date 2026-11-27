@@ -14,8 +14,9 @@ import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Writes a complete index and moves the current pointer in the same transaction, so searches see
- * either the previous collection or the whole new one. Older builds are removed afterwards; a
- * search that already read them finishes on its own snapshot.
+ * either the previous collection or the whole new one. Older builds are deleted in the same
+ * transaction; a search that already read them finishes on its own snapshot. Run the indexer in
+ * one process only: two indexers could save an older publication after a newer one.
  */
 @Service
 public class IndexStore {
@@ -92,7 +93,9 @@ public class IndexStore {
         entities.flush();
         entities.clear();
       }
-      jdbc.update("update search.current_index set build_id = ? where id = 1", buildId);
+      if (jdbc.update("update search.current_index set build_id = ? where id = 1", buildId) != 1) {
+        throw new IllegalStateException("The search current-index row is missing");
+      }
       jdbc.update("delete from search.index_build where id <> ?", buildId);
     });
   }
