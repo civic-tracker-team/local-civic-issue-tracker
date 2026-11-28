@@ -18,7 +18,7 @@ For a manually configured test database, run:
 mvn clean verify
 ```
 
-The records and analysis tests need a dedicated database, separate migration and runtime credentials, and test storage directories. [Records persistence](RECORDS_PERSISTENCE.md) and [analysis operations](ANALYSIS_OPERATIONS.md) describe those settings. Tests must not target a shared development dataset.
+The records, analysis and search tests need a dedicated database, separate migration and runtime credentials, and test storage directories. [Records persistence](RECORDS_PERSISTENCE.md), [analysis operations](ANALYSIS_OPERATIONS.md) and [search](SEARCH.md) describe those settings. Tests must not target a shared development dataset.
 
 ## Continuous integration
 
@@ -34,7 +34,7 @@ java -jar services/records-service/target/records-service-0.1.0-SNAPSHOT.jar
 
 The other Java modules use the same naming pattern. An available port is selected by default and reported at startup. Set `SERVER_PORT` when a fixed port is needed. Start each service separately through a terminal or IDE run configuration. Maven builds the modules together but does not launch them together.
 
-Records and analysis need their database and storage configuration before startup. Internal requests also require configured credentials. Analysis provides durable processing commands and saved findings; search and the coordinator still provide startup baselines.
+Records, analysis and search need their database configuration before startup. Internal requests also require configured credentials. Analysis provides durable processing commands and saved findings. Search serves the published collection.
 
 ## Guides
 
@@ -46,6 +46,7 @@ Records and analysis need their database and storage configuration before startu
 | [Record preparation](RECORDS_PREPARATION.md) | Native extraction, OCR and prepared-content reads |
 | [Model evaluation](MODEL_EVALUATION.md) | Pinned meeting inputs, local inference and reviewed association metrics |
 | [Analysis operations](ANALYSIS_OPERATIONS.md) | Saved findings, prior context, commands, imports and recovery |
+| [Search](SEARCH.md) | Per-publication index, owner settings and the public search route |
 
 The [design overview](../engineering/design/DESIGN_OVERVIEW.md) explains service ownership and processing. Architecture decisions are in `docs/engineering/adr/`.
 

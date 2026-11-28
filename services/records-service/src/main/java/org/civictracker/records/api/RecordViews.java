@@ -36,6 +36,11 @@ public final class RecordViews {
     }
   }
 
+  /**
+   * One exact byte version. {@code title} is the portal's label for these bytes from the latest
+   * current-source observation (PrimeGov template name or attachment link text). It is untrusted
+   * source text and may be null.
+   */
   public record Version(
       UUID id,
       UUID documentId,
@@ -43,6 +48,7 @@ public final class RecordViews {
       long byteLength,
       UUID artifactId,
       String originalFilename,
+      String title,
       Instant firstObservedAt,
       List<String> sourceUrls,
       List<Observation> observations,
@@ -59,5 +65,6 @@ public final class RecordViews {
       String resolvedUrl,
       String publicationDate,
       Instant observedAt,
-      boolean currentSource) {}
+      boolean currentSource,
+      String title) {}
 }

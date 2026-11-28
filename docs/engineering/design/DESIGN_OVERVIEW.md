@@ -19,7 +19,7 @@ An issue is a particular project, proposal, policy change or other continuing ma
 
 Records, search, analysis and the coordinator use Java and Spring Boot. OCR uses Python. The frontend uses React, TypeScript and Vite. MVC separates request handling from application and persistence responsibilities within the Java services. Related analysis functions stay together to avoid additional interfaces for closely connected work.
 
-Services exchange serialized values through HTTP APIs. Their Java clients can expose typed methods, but they do not share live objects, JPA sessions or database ownership. Interactive requests remain separate from background processing. A gateway product, detailed search implementation and production language-model runtime are still open choices.
+Services exchange serialized values through HTTP APIs. Their Java clients can expose typed methods, but they do not share live objects, JPA sessions or database ownership. Interactive requests remain separate from background processing. A gateway product and production language-model runtime are still open choices. ADR-0052 proposes that search keep a PostgreSQL full-text index for each publication; its detailed ranking remains open ([search guide](../../development/SEARCH.md)).
 
 ## Processing
 

@@ -125,6 +125,15 @@ public class RecordsReadService {
     Instant firstObserved =
         observations.stream().map(o -> o.observedAt).min(Comparator.naturalOrder()).orElse(null);
     List<String> urls = observations.stream().map(o -> o.sourceUrl).distinct().sorted().toList();
+    String title =
+        observations.stream()
+            .filter(o -> o.originalFilename != null && !o.originalFilename.isBlank())
+            .max(
+                Comparator.comparing((SourceObservation o) -> Boolean.TRUE.equals(o.currentSource))
+                    .thenComparing(o -> o.observedAt)
+                    .thenComparing(o -> o.id))
+            .map(o -> o.originalFilename)
+            .orElse(artifact.originalFilename);
     return new RecordViews.Version(
         id,
         version.documentId,
@@ -132,13 +141,19 @@ public class RecordsReadService {
         version.byteLength,
         artifact.id,
         artifact.originalFilename,
+        title,
         firstObserved,
         urls,
         observations.stream()
             .sorted(Comparator.comparing(o -> o.observedAt))
             .map(o ->
                 new RecordViews.Observation(
-                    o.sourceUrl, o.resolvedUrl, o.publicationDate, o.observedAt, o.currentSource))
+                    o.sourceUrl,
+                    o.resolvedUrl,
+                    o.publicationDate,
+                    o.observedAt,
+                    o.currentSource,
+                    o.originalFilename))
             .toList(),
         entities
             .createQuery(
