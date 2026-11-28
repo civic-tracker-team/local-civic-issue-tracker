@@ -41,6 +41,9 @@ final class SyntheticPublication {
   static final UUID V_LIBRARY = id("v-library");
   static final UUID V_MINUTES = id("v-minutes");
   static final UUID V_BUDGET = id("v-budget");
+  static final UUID HYDROLOGY = id("doc-hydrology");
+  static final UUID V_HYDROLOGY = id("v-hydrology");
+  static final UUID P3 = id("publication-3");
   static final UUID PARKING = id("issue-parking");
   static final UUID SIDEWALK = id("issue-sidewalk");
   static final UUID SKATE = id("issue-skate");
@@ -77,6 +80,34 @@ final class SyntheticPublication {
     meetings.add(
         manifestMeeting(M4, "2026-11-04", "Budget Workshop", "ANALYZED", R4, List.of(ref(BUDGET, V_BUDGET))));
     stub.put("/internal/v1/publications/current", manifest(P2, meetings, "2026-11-30"));
+  }
+
+  /**
+   * Makes publication 3 current: publication 1 plus a 45-page hydrology study at the second
+   * meeting, uncited by analysis. The manifest pins its preparation; Records also holds a newer,
+   * unpublished preparation of the same bytes, with a word found nowhere else.
+   */
+  void publishPinnedLongRecord() {
+    publishFirst();
+    document(HYDROLOGY, V_HYDROLOGY, "attachment-history", "Groundwater Study", M2,
+        "Parking Structure Construction Contract", "P-hydrology");
+    stub.put("/internal/v1/document-versions/" + V_HYDROLOGY, Map.of(
+        "id", V_HYDROLOGY.toString(), "documentId", HYDROLOGY.toString(),
+        "title", "Groundwater Study", "preparationIds",
+        List.of(id("P-hydrology").toString(), id("P-hydrology-unpublished").toString())));
+    var units = new ArrayList<Map<String, Object>>();
+    for (int i = 0; i < 45; i++) {
+      units.add(pdf(i, i + 1, i == 42 ? "Aquifer recharge rates are declining." : "Routine page."));
+    }
+    content(V_HYDROLOGY, HYDROLOGY, "P-hydrology", units);
+    content(V_HYDROLOGY, HYDROLOGY, "P-hydrology-unpublished",
+        List.of(pdf(0, 1, "Quokka habitat survey.")));
+    var pinned = new LinkedHashMap<String, String>(ref(HYDROLOGY, V_HYDROLOGY));
+    pinned.put("preparationId", id("P-hydrology").toString());
+    var meetings = new ArrayList<>(firstMeetings());
+    meetings.set(1, manifestMeeting(M2, "2026-10-21", "City Council Regular Meeting", "ANALYZED",
+        R2, List.of(ref(MINUTES, V_MINUTES), pinned)));
+    stub.put("/internal/v1/publications/current", manifest(P3, meetings, "2026-10-31"));
   }
 
   private List<Map<String, Object>> firstMeetings() {
@@ -177,11 +208,16 @@ final class SyntheticPublication {
         "originalFilename", "ignored.pdf", "preparationIds", List.of(id(preparation).toString())));
   }
 
+  /** Serves the units in pages of 20, as Records does. */
   private void content(UUID version, UUID document, String preparation, List<Map<String, Object>> units) {
-    stub.put(contentPath(version, preparation, 0), Map.of(
-        "documentId", document.toString(), "versionId", version.toString(),
-        "preparationId", id(preparation).toString(), "unitCount", units.size(),
-        "units", units, "page", 0, "size", 20, "hasNext", false));
+    for (int page = 0; page == 0 || page * 20 < units.size(); page++) {
+      var slice = units.subList(Math.min(page * 20, units.size()), Math.min((page + 1) * 20, units.size()));
+      stub.put(contentPath(version, preparation, page), Map.of(
+          "documentId", document.toString(), "versionId", version.toString(),
+          "preparationId", id(preparation).toString(), "unitCount", units.size(),
+          "units", List.copyOf(slice), "page", page, "size", 20,
+          "hasNext", (page + 1) * 20 < units.size()));
+    }
   }
 
   private static Map<String, Object> pdf(int ordinal, int page, String text) {

@@ -83,6 +83,27 @@ class SearchHttpTests {
   }
 
   @Test
+  void aPinnedPreparationIsIndexedAcrossEveryContentPage() throws Exception {
+    fixture.publishPinnedLongRecord();
+    assertEquals(Indexer.Outcome.BUILT, indexer.refresh());
+    for (int page = 0; page < 3; page++) {
+      assertTrue(OWNERS.requested.contains(
+          SyntheticPublication.contentPath(SyntheticPublication.V_HYDROLOGY, "P-hydrology", page)));
+    }
+    var found = search("aquifer", "records");
+    assertEquals(1, found.path("totals").path("records").asLong());
+    var hit = found.path("records").get(0);
+    assertEquals(SyntheticPublication.HYDROLOGY.toString(), hit.path("id").asString());
+    assertEquals("Page 43", hit.path("location").asString());
+    assertTrue(hit.path("details").path("textSearched").asBoolean());
+    assertEquals(0, found.path("collection").path("recordsSearchedByTitleOnly").asLong());
+    // The unpublished preparation of the same version is never read or matched.
+    assertEquals(0, search("quokka", null).path("totals").path("records").asLong());
+    assertFalse(OWNERS.requested.stream().anyMatch(path -> path.contains(
+        SyntheticPublication.id("P-hydrology-unpublished").toString())));
+  }
+
+  @Test
   void aMisrouted404IsAFailureNotAnEmptyCollection() throws Exception {
     OWNERS.fail("/internal/v1/publications/current", 404);
     assertEquals(Indexer.Outcome.FAILED, indexer.refresh());

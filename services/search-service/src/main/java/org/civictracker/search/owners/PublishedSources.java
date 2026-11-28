@@ -89,7 +89,11 @@ public final class PublishedSources {
     for (var ref : refs) {
       var version = version(ref);
       versions.put(ref, version);
-      var preparation = preparation(cited.getOrDefault(ref, Set.of()), version.preparationIds());
+      var preparation =
+          preparation(
+              manifest.preparations().get(ref),
+              cited.getOrDefault(ref, Set.of()),
+              version.preparationIds());
       if (preparation != null) {
         var items = meetings.get(firstMeeting.get(ref)).itemLabels();
         content.put(ref, content(ref, preparation, items));
@@ -99,9 +103,24 @@ public final class PublishedSources {
   }
 
   /**
-   * The prepared revision whose text is indexed: the one analysis cited, otherwise the only
-   * sealed one. Null when the choice is ambiguous, so the record is searchable by title only.
+   * The preparation whose text is indexed. A preparation pinned by the manifest is used exactly,
+   * and must be sealed and agree with what analysis cited. Without a pin, it is the one analysis
+   * cited, otherwise the only sealed one. Null when that choice is ambiguous, so the record is
+   * searchable by title only.
    */
+  static UUID preparation(UUID pinned, Set<UUID> cited, Set<UUID> sealed)
+      throws OwnerUnavailable {
+    if (pinned == null) {
+      return preparation(cited, sealed);
+    }
+    if (!sealed.contains(pinned) || !(cited.isEmpty() || cited.equals(Set.of(pinned)))) {
+      throw new OwnerUnavailable(
+          "PUBLICATION_MISMATCH", "Pinned preparation is not sealed or was not the one cited");
+    }
+    return pinned;
+  }
+
+  /** The fallback when the manifest pins no preparation (before PR #8 states one). */
   static UUID preparation(Set<UUID> cited, Set<UUID> sealed) {
     if (cited.size() == 1) {
       var only = cited.iterator().next();
@@ -120,10 +139,21 @@ public final class PublishedSources {
     }
     var meetings = new ArrayList<Meeting>();
     var seen = new HashSet<UUID>();
+    var preparations = new HashMap<SourceRef, UUID>();
     for (var meeting : node.path("meetings")) {
       var sources = new ArrayList<SourceRef>();
       for (var source : meeting.path("sources")) {
-        sources.add(new SourceRef(uuid(source, "documentId"), uuid(source, "versionId")));
+        var ref = new SourceRef(uuid(source, "documentId"), uuid(source, "versionId"));
+        sources.add(ref);
+        var stated = source.path("preparationId");
+        if (!stated.isMissingNode() && !stated.isNull()) {
+          var pinned = uuid(source, "preparationId");
+          var earlier = preparations.putIfAbsent(ref, pinned);
+          if (earlier != null && !earlier.equals(pinned)) {
+            throw new OwnerUnavailable(
+                "INVALID_MANIFEST", "Manifest pins two preparations for one version");
+          }
+        }
       }
       var disposition = text(meeting, "disposition");
       var revision = optionalUuid(meeting, "revisionId");
@@ -143,7 +173,7 @@ public final class PublishedSources {
               revision,
               sources));
     }
-    return new Manifest(uuid(node, "publicationId"), coverage, meetings);
+    return new Manifest(uuid(node, "publicationId"), coverage, meetings, preparations);
   }
 
   private MeetingRecords meetingRecords(UUID id) throws OwnerUnavailable, InterruptedException {

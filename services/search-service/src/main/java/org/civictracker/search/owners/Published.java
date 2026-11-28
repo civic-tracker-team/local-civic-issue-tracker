@@ -30,10 +30,23 @@ public final class Published {
     }
   }
 
-  public record Manifest(UUID publicationId, List<Range> coverage, List<Meeting> meetings) {
+  /**
+   * A pinned publication. {@code preparations} holds the preparation the manifest pins for a
+   * source version, when the coordinator states one.
+   */
+  public record Manifest(
+      UUID publicationId,
+      List<Range> coverage,
+      List<Meeting> meetings,
+      Map<SourceRef, UUID> preparations) {
     public Manifest {
       coverage = List.copyOf(coverage);
       meetings = List.copyOf(meetings);
+      preparations = Map.copyOf(preparations);
+    }
+
+    public Manifest(UUID publicationId, List<Range> coverage, List<Meeting> meetings) {
+      this(publicationId, coverage, meetings, Map.of());
     }
   }
 

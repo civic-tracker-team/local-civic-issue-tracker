@@ -31,13 +31,17 @@ Each poll reads `GET /internal/v1/publications/current` from the coordinator. A 
 
 Records and analysis do not check publication membership in Release 1 (ADR-0051), so this restriction is the only membership boundary. Search never reads `/issues/{id}`, document current pointers or unpinned versions. A revision that does not match its manifest meeting fails the build, and so does one that cites a version outside the manifest.
 
-A record's indexed text comes from the preparation that the publication's revisions cite for that version. If no revision cites the version and it has exactly one sealed preparation, that one is used. Otherwise, or when the preparation has no text, the record is indexed by its title, agenda item and meeting only. Responses report how many records were indexed this way.
+A record's indexed text comes from the preparation that the manifest pins for that version in its source entry's optional `preparationId`. That preparation must be sealed and must match anything the revisions cite, or the build fails. A manifest that pins two preparations for one version is rejected.
 
-Two values are not pinned by the manifest and are read from Records at build time:
-- **The uncited fallback preparation.** If a later, unpublished run seals the only preparation of an uncited version, a rebuild indexes that text under the published record. A newer preparation can also make an uncited record title-only.
+Until the coordinator states `preparationId`, search falls back to the preparation the publication's revisions cite. If no revision cites the version and it has exactly one sealed preparation, that one is used. Otherwise, or when the preparation has no text, the record is indexed by its title, agenda item and meeting only. Responses report how many records were indexed this way.
+
+Content is read page by page until Records reports no next page. The unit count must stay the same on every page.
+
+Two values can come from Records at build time rather than from the manifest:
+- **The fallback preparation, when the manifest pins none.** If a later, unpublished run seals the only preparation of an uncited version, a rebuild indexes that text under the published record. A newer preparation can also make an uncited record title-only.
 - **The record title.** It comes from the version's latest observation, which may belong to an unpublished run. For listed records it also sets the record type.
 
-Putting the preparation ID in the manifest's source entries would close the first gap and is a proposed follow-up to ADR-0051.
+Once the coordinator puts the preparation ID in the manifest's source entries, a proposed follow-up to ADR-0051, the first gap closes with no change to search.
 
 The whole index and the current-pointer move commit in one transaction, and older indexes are then deleted. If an owner read fails or returns inconsistent data, nothing is written. Searches keep using the previous collection, and the next poll tries again. Failures are logged with a stable code such as `OWNER_UNAVAILABLE` or `PUBLICATION_MISMATCH`.
 

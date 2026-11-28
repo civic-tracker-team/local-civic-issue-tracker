@@ -19,7 +19,8 @@ Search must answer from published results while a run is in progress (NFR-13). U
 - **What is indexed.**
   - Issues are named by their latest mention among the published revisions.
   - Each prepared page or agenda section of a record is its own row, and results are grouped back into one hit per pinned version.
-  - A record is searched by its title alone when the preparation to index is ambiguous or has no text, and responses report the count.
+  - A record's text comes from the preparation the manifest pins for it, when the manifest states one. Otherwise search uses the cited preparation, or the only sealed one.
+  - A record is searched by its title alone when that choice is ambiguous or the preparation has no text, and responses report the count.
 - **Slim results.** The public route `GET /api/v1/search` returns a list per selected type. Each hit has an ID, label, date, location, plain-text snippet fragments and a few kind-specific details per hit. It also returns the publication ID, coverage, record types and per-type totals. The T10 routes load full pages through the owners.
 - **Record titles.** The records version read now returns the portal title it already kept, so search and the T10 routes can label records.
 
@@ -41,10 +42,10 @@ Search must answer from published results while a run is in progress (NFR-13). U
   - Each new publication is reindexed in full, which suits Release 1 sizes but not a large archive.
   - Snippets come from PostgreSQL headlines, which can drop tag-like text.
   - Ranking uses `ts_rank` only, with no tuning against reviewed queries yet.
-  - Two values come from Records at build time rather than from the manifest: the fallback preparation for a version no revision cites, and the record title. A later unpublished run can change either, so an uncited record's text or a title can come from outside the publication. Only the preparation ID in the manifest closes the first gap.
+  - Until the manifest states preparation IDs, two values come from Records at build time rather than from the manifest: the fallback preparation for a version no revision cites, and the record title. A later unpublished run can change either, so an uncited record's text or a title can come from outside the publication. Search already uses a pinned preparation ID when one is present, so the first gap closes once the coordinator adds it.
   - The indexer must run in one process, because two could move the current index back to an older publication.
 - **Follow-ups:**
-  - Put the preparation ID in the manifest's source entries so record text is always the published preparation.
+  - Have the coordinator put the preparation ID in the manifest's source entries. It already stores one for each run input.
   - Agree the V-02 reference queries with known relevant records.
   - Run the T14 integration against published data.
   - Consider owner-side membership checks.
